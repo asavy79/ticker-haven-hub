@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { 
   TrendingUp, 
   BookOpen, 
@@ -78,6 +79,7 @@ const Navigation = () => {
                 </Link>
               );
             })}
+            <ThemeToggle />
             <Button variant="ghost" size="sm">
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
