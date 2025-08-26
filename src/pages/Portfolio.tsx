@@ -3,7 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
@@ -25,46 +31,47 @@ const Portfolio = () => {
       symbol: "MOCK-FUTURE",
       quantity: 10,
       entryPrice: 100,
-      currentPrice: 105.50,
+      currentPrice: 105.5,
       pnl: 55,
-      type: "long"
+      type: "long",
     },
     {
-      id: "2", 
+      id: "2",
       symbol: "MOCK-FUTURE",
       quantity: -5,
       entryPrice: 98,
-      currentPrice: 105.50,
-      pnl: -37.50,
-      type: "short"
-    }
+      currentPrice: 105.5,
+      pnl: -37.5,
+      type: "short",
+    },
   ]);
 
-  const [currentPrice, setCurrentPrice] = useState(105.50);
+  const [currentPrice, setCurrentPrice] = useState(105.5);
   const [tradeForm, setTradeForm] = useState({
     type: "",
     quantity: "",
-    price: ""
+    price: "",
   });
 
   // Mock real-time price updates
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentPrice(prev => {
+      setCurrentPrice((prev) => {
         const change = (Math.random() - 0.5) * 2; // Random price movement
         const newPrice = Math.max(90, Math.min(120, prev + change));
-        
+
         // Update positions with new price
-        setPositions(prevPositions => 
-          prevPositions.map(pos => ({
+        setPositions((prevPositions) =>
+          prevPositions.map((pos) => ({
             ...pos,
             currentPrice: newPrice,
-            pnl: pos.type === "long" 
-              ? (newPrice - pos.entryPrice) * pos.quantity
-              : (pos.entryPrice - newPrice) * Math.abs(pos.quantity)
+            pnl:
+              pos.type === "long"
+                ? (newPrice - pos.entryPrice) * pos.quantity
+                : (pos.entryPrice - newPrice) * Math.abs(pos.quantity),
           }))
         );
-        
+
         return newPrice;
       });
     }, 2000);
@@ -80,14 +87,16 @@ const Portfolio = () => {
       toast({
         title: "Error",
         description: "Please fill in all fields",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     toast({
       title: "Trade Placed",
-      description: `${tradeForm.type.toUpperCase()} ${tradeForm.quantity} units at $${tradeForm.price}`,
+      description: `${tradeForm.type.toUpperCase()} ${
+        tradeForm.quantity
+      } units at $${tradeForm.price}`,
     });
 
     setTradeForm({ type: "", quantity: "", price: "" });
@@ -108,11 +117,15 @@ const Portfolio = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Account Balance</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Account Balance
+            </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${accountBalance.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              ${accountBalance.toLocaleString()}
+            </div>
           </CardContent>
         </Card>
 
@@ -126,7 +139,11 @@ const Portfolio = () => {
             )}
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${totalPnL >= 0 ? 'text-success' : 'text-sell'}`}>
+            <div
+              className={`text-2xl font-bold ${
+                totalPnL >= 0 ? "text-success" : "text-sell"
+              }`}
+            >
               ${totalPnL.toFixed(2)}
             </div>
           </CardContent>
@@ -134,7 +151,9 @@ const Portfolio = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open Positions</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Open Positions
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{positions.length}</div>
@@ -150,9 +169,14 @@ const Portfolio = () => {
         <CardContent>
           <div className="space-y-4">
             {positions.map((position) => (
-              <div key={position.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div
+                key={position.id}
+                className="flex items-center justify-between p-4 border rounded-lg"
+              >
                 <div className="flex items-center space-x-4">
-                  <Badge variant={position.type === "long" ? "default" : "secondary"}>
+                  <Badge
+                    variant={position.type === "long" ? "default" : "secondary"}
+                  >
                     {position.type.toUpperCase()}
                   </Badge>
                   <div>
@@ -163,9 +187,15 @@ const Portfolio = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold">${position.currentPrice.toFixed(2)}</div>
-                  <div className={`text-sm font-medium ${position.pnl >= 0 ? 'text-success' : 'text-sell'}`}>
-                    {position.pnl >= 0 ? '+' : ''}${position.pnl.toFixed(2)}
+                  <div className="font-semibold">
+                    ${position.currentPrice.toFixed(2)}
+                  </div>
+                  <div
+                    className={`text-sm font-medium ${
+                      position.pnl >= 0 ? "text-success" : "text-sell"
+                    }`}
+                  >
+                    {position.pnl >= 0 ? "+" : ""}${position.pnl.toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -183,7 +213,12 @@ const Portfolio = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="trade-type">Type</Label>
-              <Select value={tradeForm.type} onValueChange={(value) => setTradeForm(prev => ({...prev, type: value}))}>
+              <Select
+                value={tradeForm.type}
+                onValueChange={(value) =>
+                  setTradeForm((prev) => ({ ...prev, type: value }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Buy/Sell" />
                 </SelectTrigger>
@@ -193,7 +228,7 @@ const Portfolio = () => {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="quantity">Quantity</Label>
               <Input
@@ -201,10 +236,15 @@ const Portfolio = () => {
                 type="number"
                 placeholder="0"
                 value={tradeForm.quantity}
-                onChange={(e) => setTradeForm(prev => ({...prev, quantity: e.target.value}))}
+                onChange={(e) =>
+                  setTradeForm((prev) => ({
+                    ...prev,
+                    quantity: e.target.value,
+                  }))
+                }
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="price">Price</Label>
               <Input
@@ -212,10 +252,12 @@ const Portfolio = () => {
                 type="number"
                 placeholder="0.00"
                 value={tradeForm.price}
-                onChange={(e) => setTradeForm(prev => ({...prev, price: e.target.value}))}
+                onChange={(e) =>
+                  setTradeForm((prev) => ({ ...prev, price: e.target.value }))
+                }
               />
             </div>
-            
+
             <div className="flex items-end">
               <Button onClick={handleTrade} className="w-full">
                 Place Trade

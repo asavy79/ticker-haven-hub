@@ -12,7 +12,7 @@ interface OrderbookEntry {
 const Orderbook = () => {
   const [bids, setBids] = useState<OrderbookEntry[]>([]);
   const [asks, setAsks] = useState<OrderbookEntry[]>([]);
-  const [currentPrice, setCurrentPrice] = useState(105.50);
+  const [currentPrice, setCurrentPrice] = useState(105.5);
   const [priceChange, setPriceChange] = useState(0);
 
   // Generate mock orderbook data
@@ -27,18 +27,18 @@ const Orderbook = () => {
       newBids.push({
         price,
         quantity,
-        total: price * quantity
+        total: price * quantity,
       });
     }
 
-    // Generate asks (sell orders) - above current price  
+    // Generate asks (sell orders) - above current price
     for (let i = 0; i < 10; i++) {
       const price = basePrice + (i + 1) * 0.25;
       const quantity = Math.floor(Math.random() * 50) + 5;
       newAsks.push({
         price,
         quantity,
-        total: price * quantity
+        total: price * quantity,
       });
     }
 
@@ -51,7 +51,7 @@ const Orderbook = () => {
     generateOrderbookData(currentPrice);
 
     const interval = setInterval(() => {
-      setCurrentPrice(prev => {
+      setCurrentPrice((prev) => {
         const change = (Math.random() - 0.5) * 2;
         const newPrice = Math.max(90, Math.min(120, prev + change));
         setPriceChange(newPrice - prev);
@@ -63,8 +63,8 @@ const Orderbook = () => {
     return () => clearInterval(interval);
   }, [currentPrice]);
 
-  const maxBidQuantity = Math.max(...bids.map(b => b.quantity));
-  const maxAskQuantity = Math.max(...asks.map(a => a.quantity));
+  const maxBidQuantity = Math.max(...bids.map((b) => b.quantity));
+  const maxAskQuantity = Math.max(...asks.map((a) => a.quantity));
 
   return (
     <div className="space-y-6">
@@ -74,7 +74,7 @@ const Orderbook = () => {
           <Badge variant="outline" className="text-lg px-4 py-2">
             <div className="flex items-center space-x-2">
               <span>MOCK-FUTURE</span>
-              <span className={priceChange >= 0 ? 'text-success' : 'text-sell'}>
+              <span className={priceChange >= 0 ? "text-success" : "text-sell"}>
                 ${currentPrice.toFixed(2)}
               </span>
               {priceChange >= 0 ? (
@@ -102,7 +102,7 @@ const Orderbook = () => {
               </div>
               {asks.map((ask, index) => (
                 <div key={index} className="relative">
-                  <div 
+                  <div
                     className="absolute inset-0 bg-sell/10 rounded"
                     style={{
                       width: `${(ask.quantity / maxAskQuantity) * 100}%`,
@@ -135,7 +135,7 @@ const Orderbook = () => {
               </div>
               {bids.map((bid, index) => (
                 <div key={index} className="relative">
-                  <div 
+                  <div
                     className="absolute inset-0 bg-success/10 rounded"
                     style={{
                       width: `${(bid.quantity / maxBidQuantity) * 100}%`,
@@ -159,13 +159,20 @@ const Orderbook = () => {
       <Card>
         <CardContent className="pt-6">
           <div className="text-center">
-            <div className="text-sm text-muted-foreground mb-2">Current Market Price</div>
-            <div className={`text-4xl font-bold ${priceChange >= 0 ? 'text-success' : 'text-sell'}`}>
+            <div className="text-sm text-muted-foreground mb-2">
+              Current Market Price
+            </div>
+            <div
+              className={`text-4xl font-bold ${
+                priceChange >= 0 ? "text-success" : "text-sell"
+              }`}
+            >
               ${currentPrice.toFixed(2)}
             </div>
             <div className="text-sm text-muted-foreground mt-2">
-              {priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)} (
-              {((priceChange / (currentPrice - priceChange)) * 100).toFixed(2)}%)
+              {priceChange >= 0 ? "+" : ""}${priceChange.toFixed(2)} (
+              {((priceChange / (currentPrice - priceChange)) * 100).toFixed(2)}
+              %)
             </div>
           </div>
         </CardContent>
