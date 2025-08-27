@@ -4,6 +4,7 @@ import { createContext, useEffect } from "react";
 import { UserCreate, UserLogin } from "@/types/auth";
 import * as React from "react";
 import { loginUser, createUser, getUser, removeTokens } from "@/services/auth";
+import { useNavigate } from "react-router-dom";
 
 type AuthState = {
   user: User | null;
@@ -16,9 +17,11 @@ type AuthContextType = AuthState & {
   logout: () => Promise<void> | void;
 };
 
-const AuthContext = createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -27,16 +30,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const loginResult = await loginUser(credentials);
     if (loginResult.success) {
       setUser(loginResult.user);
+      setIsLoading(false);
+      return loginResult.success;
     } else {
       setUser(null);
+      setIsLoading(false);
+      return loginResult.success;
     }
-    setIsLoading(false);
   }
 
   async function logout() {
     removeTokens();
     setUser(null);
-    window.location.href = "/";
+    navigate("/");
   }
 
   useEffect(() => {
@@ -48,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(user);
         } else {
           if (!window.location.href.endsWith("/auth")) {
-            window.location.href = "/auth";
+            navigate("/auth");
           }
         }
       } catch (error) {

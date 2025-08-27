@@ -2,7 +2,6 @@ import { UserCreate, UserLogin } from "@/types/auth";
 import axios from "@/lib/api";
 import { Token } from "@/types/auth";
 import { User } from "@/types/contracts";
-import { appendFile } from "fs";
 
 type LoginSuccess = {
     success: true;

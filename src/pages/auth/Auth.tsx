@@ -1,10 +1,19 @@
-import { useState } from "react";
+import { useState, useContext, useEffect } from "react";
 import SignIn from "./SignIn";
 import SignUp from "./SignUp";
 import heroImage from "@/assets/hero-trading.jpg";
+import { AuthContext } from "@/hooks/use-auth";
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
+
+  const { isLoading, user, login, createUser } = useContext(AuthContext);
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      window.location.href = "/portfolio";
+    }
+  }, [isLoading, user]);
 
   return (
     <div className="min-h-screen flex">
@@ -12,7 +21,7 @@ const Auth = () => {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {isSignUp ? (
-            <SignUp onToggleMode={() => setIsSignUp(false)} />
+            <SignUp onToggleMode={() => setIsSignUp(false)} login={login} />
           ) : (
             <SignIn onToggleMode={() => setIsSignUp(true)} />
           )}
