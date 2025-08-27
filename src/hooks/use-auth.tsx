@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function logout() {
     removeTokens();
     setUser(null);
+    window.location.href = "/";
   }
 
   useEffect(() => {
@@ -46,7 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (user) {
           setUser(user);
         } else {
-          window.location.href = "/login";
+          if (!window.location.href.endsWith("/auth")) {
+            window.location.href = "/auth";
+          }
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
