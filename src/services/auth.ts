@@ -2,6 +2,7 @@ import { UserCreate, UserLogin } from "@/types/auth";
 import axios from "@/lib/api";
 import { Token } from "@/types/auth";
 import { User } from "@/types/contracts";
+import { appendFile } from "fs";
 
 type LoginSuccess = {
     success: true;
@@ -13,9 +14,26 @@ type LoginError = {
     message: string;
 }
 
-type RegisterResponse = {
-    success: boolean;
+type RegisterSuccess = {
+    success: true;
+    user: User;
+}
+
+type RegisterError = {
+    success: false;
     message: string;
+}
+
+type RegisterResponse = RegisterSuccess | RegisterError
+
+function setTokens(access_token: string, api_key: string) {
+    localStorage.setItem("access_token", access_token);
+    localStorage.setItem("api_key", api_key);
+}
+
+export function removeTokens() {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("api_key");
 }
 
 export async function loginUser(credentials: UserLogin): Promise<LoginSuccess | LoginError> {
@@ -23,10 +41,12 @@ export async function loginUser(credentials: UserLogin): Promise<LoginSuccess | 
     try {
         const loginResponse: Token = await axios.post("/auth/login", credentials);
 
-        const {access_token, token_type,api_key} = loginResponse;
+        const {access_token, token_type, api_key} = loginResponse;
 
-        const user: User = await axios.post("/auth/me", access_token);
+        const user: User = await axios.post("/auth/me");
 
+
+        setTokens(access_token, api_key);
 
         return {
             success: true,
@@ -41,12 +61,24 @@ export async function loginUser(credentials: UserLogin): Promise<LoginSuccess | 
     }
 }
 
-export async function createUser(user: UserCreate): Promise<RegisterResponse> {
+
+export async function getUser(): Promise<User | null> {
+    try {
+        const user: User = await axios.get("/auth/me");
+        return user;
+    } catch(error) {
+        return null;
+    }
+}
+
+
+// Add error handling for specific errors
+export async function createUser(user_fields: UserCreate): Promise<RegisterResponse> {
 
     try {
-        await axios.post("/auth/register", user);
+        const user: User = await axios.post("/auth/register", user_fields);
         return {success: true,
-        message: "User successfully created! You may log into your account now."}
+        user: user}
     } catch(error) {
         return {
             success: false,
