@@ -145,7 +145,6 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
   );
 }
 
-// Custom hook to use the Firebase Auth context
 export function useFirebaseAuth(): FirebaseAuthContextType {
   const context = useContext(FirebaseAuthContext);
   
@@ -156,5 +155,4 @@ export function useFirebaseAuth(): FirebaseAuthContextType {
   return context;
 }
 
-// Export the context for direct access if needed
 export { FirebaseAuthContext };
