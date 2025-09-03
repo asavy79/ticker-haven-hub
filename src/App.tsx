@@ -22,78 +22,78 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Auth route (no layout) */}
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/qrcode/:id" element={<QRCode />} />
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+          <Routes>
+            {/* Auth route (no layout) */}
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/qrcode/:id" element={<QRCode />} />
 
-              {/* Protected routes with layout */}
-              <Route
-                path="/"
-                element={
-                  <Layout>
-                    <Portfolio />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/portfolio"
-                element={
-                  <Layout>
-                    <Portfolio />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/orderbook"
-                element={
-                  <Layout>
-                    <Orderbook />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/meetings"
-                element={
-                  <Layout>
-                    <Meetings />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <Layout>
-                    <Admin />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/admin/members"
-                element={
-                  <Layout>
-                    <Members />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/admin/members/:id"
-                element={
-                  <Layout>
-                    <MemberDetail />
-                  </Layout>
-                }
-              />
+            {/* Protected routes with layout */}
+            <Route
+              path="/"
+              element={
+                <Layout>
+                  <Portfolio />
+                </Layout>
+              }
+            />
+            <Route
+              path="/portfolio"
+              element={
+                <Layout>
+                  <Portfolio />
+                </Layout>
+              }
+            />
+            <Route
+              path="/orderbook"
+              element={
+                <Layout>
+                  <Orderbook />
+                </Layout>
+              }
+            />
+            <Route
+              path="/meetings"
+              element={
+                <Layout>
+                  <Meetings />
+                </Layout>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <Layout>
+                  <Admin />
+                </Layout>
+              }
+            />
+            <Route
+              path="/admin/members"
+              element={
+                <Layout>
+                  <Members />
+                </Layout>
+              }
+            />
+            <Route
+              path="/admin/members/:id"
+              element={
+                <Layout>
+                  <MemberDetail />
+                </Layout>
+              }
+            />
 
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
+            {/* Catch-all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          </AuthProvider>
+        </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

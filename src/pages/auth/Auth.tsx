@@ -1,19 +1,20 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import SignIn from "./SignIn";
 import SignUp from "./SignUp";
 import heroImage from "@/assets/hero-trading.jpg";
-import { AuthContext } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth";
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
-
-  const { isLoading, user, login, createUser } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const { isLoading, user } = useAuth();
 
   useEffect(() => {
     if (!isLoading && user) {
-      window.location.href = "/portfolio";
+      navigate("/portfolio");
     }
-  }, [isLoading, user]);
+  }, [isLoading, user, navigate]);
 
   return (
     <div className="min-h-screen flex">
@@ -21,7 +22,7 @@ const Auth = () => {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {isSignUp ? (
-            <SignUp onToggleMode={() => setIsSignUp(false)} login={login} />
+            <SignUp onToggleMode={() => setIsSignUp(false)} />
           ) : (
             <SignIn onToggleMode={() => setIsSignUp(true)} />
           )}
