@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '@/lib/firebase';
-import { AppUser, AuthState, UserSignIn, UserSignUp, AuthError } from '@/types/auth';
+import { AuthState, UserSignIn, UserSignUp, AuthError } from '@/types/auth';
 import { 
   signInUser, 
   signUpUser, 
@@ -13,10 +13,8 @@ import {
 } from '@/services/auth';
 
 interface FirebaseAuthContextType extends AuthState {
-  signIn: (credentials: UserSignIn) => Promise<{ success: true } | { success: false; error: AuthError }>;
-  signUp: (credentials: UserSignUp) => Promise<{ success: true } | { success: false; error: AuthError }>;
-  signInWithGoogle: () => Promise<{ success: true } | { success: false; error: AuthError }>;
   signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<{ success: true } | { success: false; error: AuthError }>;
   resetPassword: (email: string) => Promise<{ success: true } | { success: false; error: AuthError }>;
   clearError: () => void;
 }
@@ -36,7 +34,6 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
     error: null,
   });
 
-  // Subscribe to Firebase auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       setAuthState(prev => ({
@@ -46,51 +43,49 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
         isLoading: false,
       }));
 
-      // Redirect logic - only redirect to auth if user is not authenticated and not already on auth page
       if (!firebaseUser && !window.location.pathname.includes('/auth')) {
         navigate('/auth');
       }
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [navigate]);
 
-  const signIn = async (credentials: UserSignIn): Promise<{ success: true } | { success: false; error: AuthError }> => {
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+  // const signIn = async (credentials: UserSignIn): Promise<{ success: true } | { success: false; error: AuthError }> => {
+  //   setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
-    const result = await signInUser(credentials);
+  //   const result = await signInUser(credentials);
     
-    if (result.success) {
-      setAuthState(prev => ({ ...prev, isLoading: false }));
-      return { success: true };
-    } else {
-      setAuthState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: result.error.message 
-      }));
-      return { success: false, error: result.error };
-    }
-  };
+  //   if (result.success) {
+  //     setAuthState(prev => ({ ...prev, isLoading: false }));
+  //     return { success: true };
+  //   } else {
+  //     setAuthState(prev => ({ 
+  //       ...prev, 
+  //       isLoading: false, 
+  //       error: result.error.message 
+  //     }));
+  //     return { success: false, error: result.error };
+  //   }
+  // };
 
-  const signUp = async (credentials: UserSignUp): Promise<{ success: true } | { success: false; error: AuthError }> => {
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+  // const signUp = async (credentials: UserSignUp): Promise<{ success: true } | { success: false; error: AuthError }> => {
+  //   setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
     
-    const result = await signUpUser(credentials);
+  //   const result = await signUpUser(credentials);
     
-    if (result.success) {
-      setAuthState(prev => ({ ...prev, isLoading: false }));
-      return { success: true };
-    } else {
-      setAuthState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: result.error.message 
-      }));
-      return { success: false, error: result.error };
-    }
-  };
+  //   if (result.success) {
+  //     setAuthState(prev => ({ ...prev, isLoading: false }));
+  //     return { success: true };
+  //   } else {
+  //     setAuthState(prev => ({ 
+  //       ...prev, 
+  //       isLoading: false, 
+  //       error: result.error.message 
+  //     }));
+  //     return { success: false, error: result.error };
+  //   }
+  // };
 
   const signOut = async (): Promise<void> => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -137,12 +132,10 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
 
   const contextValue: FirebaseAuthContextType = {
     ...authState,
-    signIn,
-    signUp,
     signInWithGoogle: handleSignInWithGoogle,
-    signOut,
     resetPassword,
     clearError,
+    signOut,
   };
 
   return (
