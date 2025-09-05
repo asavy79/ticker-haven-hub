@@ -86,7 +86,7 @@ export async function setAccountRole(userId: string, role: AccountRole): Promise
 
 export async function deleteAccount(userId: string): Promise<AccountDeleteResponse> {
     try {
-        await api.delete(`/auth/delete/${userId}`);
+        await api.delete(`/auth/profiles/${userId}`);
         return {
             success: true,
         };
@@ -100,7 +100,7 @@ export async function deleteAccount(userId: string): Promise<AccountDeleteRespon
 
 export async function getAccount(userId: string): Promise<AccountGetResponse> {
     try {
-        const result = await api.get(`/auth/get/${userId}`);
+        const result = await api.get(`/auth/profiles/${userId}`);
         return {
             success: true,
             user: result.data,
@@ -115,7 +115,7 @@ export async function getAccount(userId: string): Promise<AccountGetResponse> {
 
 export async function getAccounts(): Promise<AccountGetAllResponse> {
     try {
-        const result = await api.get(`/auth/get`);
+        const result = await api.get(`/auth/profiles`);
         return {
             success: true,
             users: result.data,

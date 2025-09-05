@@ -10,7 +10,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { UserSignUp, UserSignIn, AppUser, AuthError } from '@/types/auth';
-import api from '@/lib/api';
+import { getAccount, createAccount } from './adminAuth';
 
 // Helper function to convert Firebase user to AppUser
 export function firebaseUserToAppUser(firebaseUser: FirebaseUser): AppUser {
@@ -156,6 +156,29 @@ export async function signInWithGoogle(): Promise<{ success: true; user: AppUser
 
         }
 
+        const accountResult = await getAccount(appUser.uid);
+
+        if (!accountResult.success) {
+            await signOutUser();
+            return {
+                success: false,
+                error: { code: 'auth/account-not-found', message: 'Account not found.' },
+            };
+        }
+
+        const userProfile = accountResult.user;
+
+
+        if (!userProfile) {
+            const createAccountResult = await createAccount(appUser);
+            if (!createAccountResult.success) {
+                await signOutUser();
+                return {
+                    success: false,
+                    error: { code: 'auth/account-not-found', message: 'Account not found.' },
+                };
+            }
+        }
 
         return {
             success: true,
