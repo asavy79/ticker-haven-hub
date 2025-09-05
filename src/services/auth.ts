@@ -10,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { UserSignUp, UserSignIn, AppUser, AuthError } from '@/types/auth';
+import api from '@/lib/api';
 
 // Helper function to convert Firebase user to AppUser
 export function firebaseUserToAppUser(firebaseUser: FirebaseUser): AppUser {
@@ -142,6 +143,7 @@ export async function signInWithGoogle(): Promise<{ success: true; user: AppUser
         const result = await signInWithPopup(auth, provider);
         const appUser = firebaseUserToAppUser(result.user);
 
+
         const email = appUser.email;
 
 
@@ -153,6 +155,7 @@ export async function signInWithGoogle(): Promise<{ success: true; user: AppUser
             };
 
         }
+
 
         return {
             success: true,
