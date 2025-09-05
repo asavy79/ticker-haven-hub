@@ -103,6 +103,9 @@ export async function signInUser(credentials: UserSignIn): Promise<{ success: tr
 
         const appUser = firebaseUserToAppUser(userCredential.user);
 
+
+
+
         return {
             success: true,
             user: appUser,
@@ -138,6 +141,18 @@ export async function signInWithGoogle(): Promise<{ success: true; user: AppUser
 
         const result = await signInWithPopup(auth, provider);
         const appUser = firebaseUserToAppUser(result.user);
+
+        const email = appUser.email;
+
+
+        if (!email.endsWith("@colorado.edu")) {
+            await signOutUser();
+            return {
+                success: false,
+                error: { code: 'auth/invalid-email', message: 'Please use a Colorado email address.' },
+            };
+
+        }
 
         return {
             success: true,

@@ -1,22 +1,19 @@
 import axios from "axios";
+import { auth } from "./firebase";
 
 const BASE_URL = "http://localhost:8000";
 
 
 function getAuthBearer() {
-    const accessToken = localStorage.getItem("access_token");
-    const apiKey = localStorage.getItem("api_key");
+    const token = auth.currentUser?.getIdToken();
 
-    if(accessToken) {
-        return `Bearer ${accessToken}`
+    if (!token) {
+        return {};
     }
 
-    else if(apiKey) {
-        return `Bearer ${apiKey}`;
-    }
-
-
-    return {};
+    return {
+        Authorization: `Bearer ${token}`
+    };
 }
 
 
@@ -24,12 +21,16 @@ const axiosInstance = axios.create({
     baseURL: BASE_URL,
     headers: {
         "Content-Type": "application/json",
+        ...getAuthBearer()
     }
 });
 
 
 axiosInstance.interceptors.response.use((config) => {
-    config.headers.Authorization = getAuthBearer();
+    config.headers = {
+        ...config.headers,
+        ...getAuthBearer()
+    };
     return config;
 })
 
