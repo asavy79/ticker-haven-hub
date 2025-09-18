@@ -11,9 +11,12 @@ import {
   LogOut 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "@/components/ui/use-toast";
 
 const Navigation = () => {
   const location = useLocation();
+  const { signOut, isLoading } = useAuth();
 
   const mainNavItems = [
     { name: "Portfolio", href: "/portfolio", icon: TrendingUp },
@@ -27,6 +30,22 @@ const Navigation = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out successfully",
+        description: "You have been signed out of your account.",
+      });
+    } catch (error) {
+      toast({
+        title: "Sign out failed",
+        description: "There was an error signing you out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <nav className="border-b bg-card">
@@ -80,9 +99,14 @@ const Navigation = () => {
               );
             })}
             <ThemeToggle />
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleSignOut}
+              disabled={isLoading}
+            >
               <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+              {isLoading ? "Signing Out..." : "Sign Out"}
             </Button>
           </div>
         </div>

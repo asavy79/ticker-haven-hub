@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import SignIn from "./SignIn";
 import SignUp from "./SignUp";
 import heroImage from "@/assets/hero-trading.jpg";
+import { useAuth } from "@/hooks/use-auth";
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
+  const navigate = useNavigate();
+  const { isLoading, user } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate("/portfolio");
+    }
+  }, [isLoading, user, navigate]);
 
   return (
     <div className="min-h-screen flex">

@@ -1,39 +1,25 @@
-import { User } from "@/types/contracts";
-import { useState } from "react";
-import { useContext, createContext } from "react";
-import { UserCreate, UserLogin } from "@/types/auth";
-import * as React from "react";
+import { useFirebaseAuth } from '@/contexts/firebase-auth-context';
+import { AppUser } from '@/types/auth';
 
-type AuthState = {
-  user: User | null;
-  accessToken: string | null;
-  apiKey: string | null;
-  isLoading: boolean;
-};
+// Legacy hook that wraps the new Firebase auth context
+// This maintains backward compatibility with existing components
+export function useAuth() {
+  const firebaseAuth = useFirebaseAuth();
 
-type AuthContextType = AuthState & {
-  login: (creds: UserLogin) => Promise<void>;
-  register: (payload: UserCreate) => Promise<void>;
-  logout: () => Promise<void> | void;
-  refresh: () => Promise<void>;
-};
-
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-
-  return (
-    <AuthContext.Provider
-      user={user}
-      isLoading={isLoading}
-      apiKey={apiKey}
-      accessToken={accessToken}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  return {
+    user: firebaseAuth.user as AppUser | null,
+    isLoading: firebaseAuth.isLoading,
+    error: firebaseAuth.error,
+    logout: firebaseAuth.signOut,
+    signInWithGoogle: firebaseAuth.signInWithGoogle,
+    signOut: firebaseAuth.signOut,
+    resetPassword: firebaseAuth.resetPassword,
+    clearError: firebaseAuth.clearError,
+  };
 }
+
+// Export the Firebase auth hook directly for new components
+export { useFirebaseAuth } from '@/contexts/firebase-auth-context';
+
+// Re-export the provider for convenience
+export { FirebaseAuthProvider as AuthProvider } from '@/contexts/firebase-auth-context';
