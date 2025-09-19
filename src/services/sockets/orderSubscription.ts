@@ -78,11 +78,16 @@ class OrderBookConnection extends SocketConnection {
         switch(data.type) {
             case "snapshot":
                 this.setOrders(data.orders);
+                this.initialDataLoaded = true;
                 break;
             case "update":
-                this.addOrder(data.order);
+                if(this.initialDataLoaded) {
+                    this.addOrder(data.order);
+                }
+                
                 break; 
             default:
+                // something
                 break;
         }
     }
