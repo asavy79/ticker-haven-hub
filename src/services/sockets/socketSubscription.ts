@@ -4,7 +4,7 @@ interface BaseMessage {
     timestamp: string;
 }
 
-interface ConnectionConfig {
+export interface ConnectionConfig {
     url: string;
     params: any
 }
@@ -28,7 +28,11 @@ abstract class SocketConnection {
         this.url = config.url;
     }
 
-    abstract messageHandler(): void;
+    abstract messageHandler(data: any): void;
+
+    abstract openConnection(): void;
+
+    abstract unsubscribe(): void;
 
 
     public async connect() {
@@ -46,31 +50,8 @@ abstract class SocketConnection {
         this.ws.send(JSON.stringify(subscribePayload));
     }
     
-    private async unsubscribe(payload: UnsubscribeMessage) {
-        this.ws.send(JSON.stringify(payload));
-    }
 
-
-    private unsubscribePayload(): UnsubscribeMessage {
-        return {
-            type: "unsubscribe",
-            model: {
-                channel: this.channel,
-                url: this.url,
-            },
-            timestamp: (new Date()).toISOString(),
-        }
-    }
-
-
-    public async disconnect() {
-        if(!this.ws) {
-            return;
-        }
-        else {
-            const payload = this.unsubscribePayload()
-            this.unsubscribe(payload)
-        }
-    }
 
 }
+
+export default SocketConnection
