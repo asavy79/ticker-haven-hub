@@ -7,6 +7,7 @@ import {
     sendPasswordResetEmail,
     updateProfile,
     User as FirebaseUser,
+    SAMLAuthProvider
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { UserSignUp, UserSignIn, AppUser, AuthError } from '@/types/auth';
@@ -104,9 +105,6 @@ export async function signInUser(credentials: UserSignIn): Promise<{ success: tr
 
         const appUser = firebaseUserToAppUser(userCredential.user);
 
-
-
-
         return {
             success: true,
             user: appUser,
@@ -156,29 +154,29 @@ export async function signInWithGoogle(): Promise<{ success: true; user: AppUser
 
         }
 
-        const accountResult = await getAccount(appUser.uid);
+        // const accountResult = await getAccount(appUser.uid);
 
-        if (!accountResult.success) {
-            await signOutUser();
-            return {
-                success: false,
-                error: { code: 'auth/account-not-found', message: 'Account not found.' },
-            };
-        }
+        // if (!accountResult.success) {
+        //     await signOutUser();
+        //     return {
+        //         success: false,
+        //         error: { code: 'auth/account-not-found', message: 'Account not found.' },
+        //     };
+        // }
 
-        const userProfile = accountResult.user;
+        // const userProfile = accountResult.user;
 
 
-        if (!userProfile) {
-            const createAccountResult = await createAccount(appUser);
-            if (!createAccountResult.success) {
-                await signOutUser();
-                return {
-                    success: false,
-                    error: { code: 'auth/account-not-found', message: 'Account not found.' },
-                };
-            }
-        }
+        // if (!userProfile) {
+        //     const createAccountResult = await createAccount(appUser);
+        //     if (!createAccountResult.success) {
+        //         await signOutUser();
+        //         return {
+        //             success: false,
+        //             error: { code: 'auth/account-not-found', message: 'Account not found.' },
+        //         };
+        //     }
+        // }
 
         return {
             success: true,
@@ -190,6 +188,29 @@ export async function signInWithGoogle(): Promise<{ success: true; user: AppUser
             error: firebaseErrorToAuthError(error),
         };
     }
+}
+
+export async function signInWithSSO() {
+
+    try {
+        // const handler = "https://quantx-auth.firebaseapp.com/__/auth/handler";
+        const provider = new SAMLAuthProvider("saml.cu-identikey");
+    
+        const result = await signInWithPopup(auth, provider);
+        const appUser = firebaseUserToAppUser(result.user);
+        return {
+            success: true,
+            user: appUser,
+        }
+    
+    } catch(error) {
+        return {
+            success: false,
+            error: firebaseErrorToAuthError(error),
+        }
+    }
+
+
 }
 
 // Send password reset email

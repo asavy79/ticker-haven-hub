@@ -16,11 +16,15 @@ import {
   signOutUser,
   sendPasswordReset,
   firebaseUserToAppUser,
+  signInWithSSO,
 } from "@/services/auth";
 
 interface FirebaseAuthContextType extends AuthState {
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<
+    { success: true } | { success: false; error: AuthError }
+  >;
+  signInWithSSO: () => Promise<
     { success: true } | { success: false; error: AuthError }
   >;
   resetPassword: (
@@ -136,6 +140,26 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
     }
   };
 
+  const handleSignInWithSSO = async (): Promise<
+    { success: true } | { success: false; error: AuthError }
+  > => {
+    setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
+
+    const result = await signInWithSSO();
+
+    if (result.success) {
+      setAuthState((prev) => ({ ...prev, isLoading: false }));
+      return { success: true };
+    } else {
+      setAuthState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: result.error.message,
+      }));
+      return { success: false, error: result.error };
+    }
+  };
+
   const resetPassword = async (
     email: string
   ): Promise<{ success: true } | { success: false; error: AuthError }> => {
@@ -153,6 +177,7 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
     resetPassword,
     clearError,
     signOut,
+    signInWithSSO: handleSignInWithSSO,
   };
 
   return (
