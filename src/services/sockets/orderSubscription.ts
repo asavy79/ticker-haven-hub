@@ -9,14 +9,14 @@ interface SubscriptionPayload {
 }
 
 interface OrderSnapshotResponse {
-    type: "snapshot";
-    orders: Order[];
+    type: "batch";
+    orders: OrderbookEntry[];
     timestamp: string;
 }
 
 interface OrderUpdateResponse {
     type: "update";
-    order: Order;
+    order: OrderbookEntry;
     timestamp: string;
 }
 
@@ -26,6 +26,7 @@ interface OrderbookEntry {
     quantity: number;
     total: number;
     type: string;
+    timestamp: string;
   }
 
 interface uiFunctions {
@@ -42,6 +43,7 @@ export class OrderBookConnection extends SocketConnection {
     protected isLoaded: boolean;
     protected ticker: string;
     protected initialDataLoaded: boolean;
+    protected uiFunctions: uiFunctions;
 
 
 
@@ -51,6 +53,8 @@ export class OrderBookConnection extends SocketConnection {
         // component functions passed in to update the ui
         this.addOrder = updateFunctions.addOrder;
         this.setOrders = updateFunctions.setOrders;
+        this.uiFunctions = updateFunctions;
+
 
         this.isLoaded = false;
         this.ticker = ticker;
@@ -61,18 +65,18 @@ export class OrderBookConnection extends SocketConnection {
         this.connect()
 
         this.ws.addEventListener("open", () => {
-            this.getInitialData();
+            // this.getInitialData();
             this.isLoaded = true;
         })
 
         this.ws.addEventListener("message", (event) => {
             const data = event.data;
-
             this.messageHandler(JSON.parse(data));
         })
 
         // might be useful for something later
         this.ws.addEventListener("close", () => {
+            console.log("Connection has been closed!");
             return;
         })
 
@@ -83,16 +87,17 @@ export class OrderBookConnection extends SocketConnection {
     }
 
     public messageHandler(data: OrderUpdateResponse | OrderSnapshotResponse) {
+
         switch(data.type) {
-            case "snapshot":
-                this.setOrders(data.orders);
+            case "batch":
+                console.log(data.orders);
+                this.uiFunctions.setOrders(data.orders);
                 this.initialDataLoaded = true;
                 break;
             case "update":
                 if(this.initialDataLoaded) {
-                    this.addOrder(data.order);
+                    this.uiFunctions.addOrder(data.order);
                 }
-                
                 break; 
             default:
                 // something
@@ -100,20 +105,6 @@ export class OrderBookConnection extends SocketConnection {
         }
     }
 
-    public unsubscribe() {
-
-        try {
-        const closingPayload: SubscriptionPayload = {
-            type: "orders",
-            subscription: "close",
-            ticker: this.ticker,
-
-        }
-        this.ws.send(JSON.stringify(closingPayload));
-    } catch(error) {
-        this.ws.close();
-    }
-    }
 
     private getInitialData() {
         const snapshotPayload: SubscriptionPayload = {

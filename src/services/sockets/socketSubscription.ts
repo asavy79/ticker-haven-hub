@@ -32,10 +32,16 @@ abstract class SocketConnection {
 
     abstract openConnection(): void;
 
-    abstract unsubscribe(): void;
 
+    public unsubscribe() {
+        try {
+            this.ws.close();
+        } catch(error) {
+            console.log(error);
+        }
+    }
 
-    public async connect() {
+    public connect() {
         if (this.ws?.readyState === WebSocket.OPEN || this.isConnecting) {
             return;
           }
