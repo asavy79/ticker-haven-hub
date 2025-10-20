@@ -20,17 +20,25 @@ interface OrderUpdateResponse {
     timestamp: string;
 }
 
+interface OrderbookEntry {
+    id: string;
+    price: number;
+    quantity: number;
+    total: number;
+    type: string;
+  }
+
 interface uiFunctions {
-    addOrder: (newOrder: Order) => void;
-    setOrders: (orders: Order[]) => void;
+    addOrder: (newOrder: OrderbookEntry) => void;
+    setOrders: (orders: OrderbookEntry[]) => void;
 }
 
 
-class OrderBookConnection extends SocketConnection {
+export class OrderBookConnection extends SocketConnection {
 
 
-    protected addOrder: (newOrder: Order) => void;
-    protected setOrders: (orders: Order[]) => void;
+    protected addOrder: (newOrder: OrderbookEntry) => void;
+    protected setOrders: (orders: OrderbookEntry[]) => void;
     protected isLoaded: boolean;
     protected ticker: string;
     protected initialDataLoaded: boolean;
