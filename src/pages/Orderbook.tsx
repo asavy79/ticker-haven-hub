@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import OrderBookConnection from "@/services/sockets/orderSubscription";
 
 interface OrderbookEntry {
   price: number;
   quantity: number;
   total: number;
+  type: string;
 }
 
 const Orderbook = () => {
@@ -28,6 +30,7 @@ const Orderbook = () => {
         price,
         quantity,
         total: price * quantity,
+        type: "",
       });
     }
 
@@ -39,6 +42,7 @@ const Orderbook = () => {
         price,
         quantity,
         total: price * quantity,
+        type: "",
       });
     }
 
@@ -46,8 +50,21 @@ const Orderbook = () => {
     setAsks(newAsks);
   };
 
+  const addOrder = (order: OrderbookEntry) => {};
+
   // Mock real-time updates
   useEffect(() => {
+    const config = {
+      url: "",
+      params: "",
+    };
+
+    const bookSub = new OrderBookConnection(
+      config,
+      { setOrders: setBids, addOrder: addOrder },
+      "QNTX"
+    );
+
     generateOrderbookData(currentPrice);
 
     const interval = setInterval(() => {

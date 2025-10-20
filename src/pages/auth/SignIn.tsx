@@ -14,7 +14,8 @@ interface SignInProps {
 
 const SignIn = ({ onToggleMode }: SignInProps) => {
   const navigate = useNavigate();
-  const { signIn, signInWithGoogle, isLoading, error, clearError } = useAuth();
+  const { signInWithSSO, signInWithGoogle, isLoading, error, clearError } =
+    useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -46,9 +47,29 @@ const SignIn = ({ onToggleMode }: SignInProps) => {
 
   const handleGoogleSignIn = async () => {
     clearError();
-    
+
     const result = await signInWithGoogle();
-    
+
+    if (result.success) {
+      toast({
+        title: "Welcome!",
+        description: "Successfully signed in with Google.",
+      });
+      navigate("/portfolio");
+    } else {
+      toast({
+        title: "Google Sign-In Failed",
+        description: result.error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSSOSignIn = async () => {
+    clearError();
+
+    const result = await signInWithSSO();
+
     if (result.success) {
       toast({
         title: "Welcome!",
@@ -117,22 +138,21 @@ const SignIn = ({ onToggleMode }: SignInProps) => {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
-          
+
           {error && (
-            <div className="text-sm text-destructive text-center">
-              {error}
-            </div>
+            <div className="text-sm text-destructive text-center">{error}</div>
           )}
-          
+
           <div className="text-center">
-            <Button 
-              type="button" 
-              variant="link" 
+            <Button
+              type="button"
+              variant="link"
               onClick={() => {
                 // You can implement forgot password functionality here
                 toast({
                   title: "Password Reset",
-                  description: "Password reset functionality will be implemented soon.",
+                  description:
+                    "Password reset functionality will be implemented soon.",
                 });
               }}
               className="text-sm"

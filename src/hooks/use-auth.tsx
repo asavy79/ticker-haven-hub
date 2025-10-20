@@ -1,5 +1,5 @@
-import { useFirebaseAuth } from '@/contexts/firebase-auth-context';
-import { AppUser } from '@/types/auth';
+import { useFirebaseAuth } from "@/contexts/firebase-auth-context";
+import { AppUser } from "@/types/auth";
 
 // Legacy hook that wraps the new Firebase auth context
 // This maintains backward compatibility with existing components
@@ -12,6 +12,7 @@ export function useAuth() {
     error: firebaseAuth.error,
     logout: firebaseAuth.signOut,
     signInWithGoogle: firebaseAuth.signInWithGoogle,
+    signInWithSSO: firebaseAuth.signInWithSSO,
     signOut: firebaseAuth.signOut,
     resetPassword: firebaseAuth.resetPassword,
     clearError: firebaseAuth.clearError,
@@ -19,7 +20,7 @@ export function useAuth() {
 }
 
 // Export the Firebase auth hook directly for new components
-export { useFirebaseAuth } from '@/contexts/firebase-auth-context';
+export { useFirebaseAuth } from "@/contexts/firebase-auth-context";
 
 // Re-export the provider for convenience
-export { FirebaseAuthProvider as AuthProvider } from '@/contexts/firebase-auth-context';
+export { FirebaseAuthProvider as AuthProvider } from "@/contexts/firebase-auth-context";

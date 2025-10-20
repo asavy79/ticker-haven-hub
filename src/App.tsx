@@ -15,6 +15,7 @@ import Members from "./pages/admin/Members";
 import MemberDetail from "./pages/admin/MemberDetail";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./hooks/use-auth";
+import OrderMock from "./pages/OrderMock";
 
 const queryClient = new QueryClient();
 
@@ -26,72 +27,80 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-          <Routes>
-            {/* Auth route (no layout) */}
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/qrcode/:id" element={<QRCode />} />
+            <Routes>
+              {/* Auth route (no layout) */}
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/qrcode/:id" element={<QRCode />} />
 
-            {/* Protected routes with layout */}
-            <Route
-              path="/"
-              element={
-                <Layout>
-                  <Portfolio />
-                </Layout>
-              }
-            />
-            <Route
-              path="/portfolio"
-              element={
-                <Layout>
-                  <Portfolio />
-                </Layout>
-              }
-            />
-            <Route
-              path="/orderbook"
-              element={
-                <Layout>
-                  <Orderbook />
-                </Layout>
-              }
-            />
-            <Route
-              path="/meetings"
-              element={
-                <Layout>
-                  <Meetings />
-                </Layout>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <Layout>
-                  <Admin />
-                </Layout>
-              }
-            />
-            <Route
-              path="/admin/members"
-              element={
-                <Layout>
-                  <Members />
-                </Layout>
-              }
-            />
-            <Route
-              path="/admin/members/:id"
-              element={
-                <Layout>
-                  <MemberDetail />
-                </Layout>
-              }
-            />
+              {/* Protected routes with layout */}
+              <Route
+                path="/"
+                element={
+                  <Layout>
+                    <Portfolio />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/portfolio"
+                element={
+                  <Layout>
+                    <Portfolio />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/orderbook"
+                element={
+                  <Layout>
+                    <Orderbook />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/meetings"
+                element={
+                  <Layout>
+                    <Meetings />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <Layout>
+                    <Admin />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/admin/members"
+                element={
+                  <Layout>
+                    <Members />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/admin/members/:id"
+                element={
+                  <Layout>
+                    <MemberDetail />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/mock-orderbook"
+                element={
+                  <Layout>
+                    <OrderMock />
+                  </Layout>
+                }
+              />
 
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
