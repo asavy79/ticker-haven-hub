@@ -1,6 +1,7 @@
 import SocketConnection from "./socketSubscription"
 import { ConnectionConfig } from "./socketSubscription";
 import { Order } from "@/types/contracts";
+import { getFirebaseToken } from "@/services/auth";
 
 interface SubscriptionPayload {
     subscription: string;
@@ -36,7 +37,6 @@ interface uiFunctions {
 
 
 export class OrderBookConnection extends SocketConnection {
-
 
     protected addOrder: (newOrder: OrderbookEntry) => void;
     protected setOrders: (orders: OrderbookEntry[]) => void;
@@ -105,15 +105,26 @@ export class OrderBookConnection extends SocketConnection {
         }
     }
 
-
-    private getInitialData() {
-        const snapshotPayload: SubscriptionPayload = {
-            type: "orders",
-            subscription: "snapshot",
-            ticker: this.ticker,
+    public async sendOrder(order: Omit<OrderbookEntry, "id" | "timestamp" | "total">) {
+        try {
+            const token = await getFirebaseToken();
+            if(!token) {
+                console.error("No token found!");
+            }
+            this.ws.send(JSON.stringify({type: "order", order: order, token: token}));
+        } catch(error) {
+            console.error(error);
         }
-        this.ws.send(JSON.stringify(snapshotPayload));
     }
+
+    // private getInitialData() {
+    //     const snapshotPayload: SubscriptionPayload = {
+    //         type: "orders",
+    //         subscription: "snapshot",
+    //         ticker: this.ticker,
+    //     }
+    //     this.ws.send(JSON.stringify(snapshotPayload));
+    // }
 }
 
 export default OrderBookConnection;

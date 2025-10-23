@@ -12,6 +12,7 @@ import {
 import { auth } from '@/lib/firebase';
 import { UserSignUp, UserSignIn, AppUser, AuthError } from '@/types/auth';
 import { getAccount, createAccount } from './adminAuth';
+import { getAuth } from "firebase/auth";
 
 // Helper function to convert Firebase user to AppUser
 export function firebaseUserToAppUser(firebaseUser: FirebaseUser): AppUser {
@@ -257,4 +258,9 @@ export async function getUser(): Promise<AppUser | null> {
         return firebaseUserToAppUser(auth.currentUser);
     }
     return null;
+}
+export async function getFirebaseToken() {
+    const user = getAuth().currentUser;
+    const token = user ? await user.getIdToken() : null;
+    return token;
 }

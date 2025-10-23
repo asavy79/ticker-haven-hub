@@ -4,15 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Activity, 
-  Clock, 
+import {
+  TrendingUp,
+  Activity,
+  Clock,
   DollarSign,
   ArrowUpCircle,
-  ArrowDownCircle
+  ArrowDownCircle,
 } from "lucide-react";
+import { useFirebaseAuth } from "@/contexts/firebase-auth-context";
 
 export interface OrderbookEntry {
   id: string;
@@ -31,18 +31,22 @@ const connectionConfig = {
 const OrderMock = () => {
   const [buyOrders, setBuyOrders] = useState<OrderbookEntry[]>([]);
   const [sellOrders, setSellOrders] = useState<OrderbookEntry[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [connectionStatus, setConnectionStatus] = useState<
+    "connecting" | "connected" | "disconnected"
+  >("connecting");
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
+
+  const { user, isLoading, firebaseUser } = useFirebaseAuth();
 
   const addOrder = (o: OrderbookEntry) => {
     console.log("INSIDE ADD ORDER FUNCTION");
     setLastUpdate(new Date());
-    setNewOrderIds(prev => new Set(prev).add(o.id));
-    
+    setNewOrderIds((prev) => new Set(prev).add(o.id));
+
     // Remove the highlight after 3 seconds
     setTimeout(() => {
-      setNewOrderIds(prev => {
+      setNewOrderIds((prev) => {
         const newSet = new Set(prev);
         newSet.delete(o.id);
         return newSet;
@@ -69,8 +73,10 @@ const OrderMock = () => {
   const handlersRef = useRef({ addOrder, setOrders });
   handlersRef.current = { addOrder, setOrders };
 
+  const subRef = useRef<OrderBookConnection>();
+
   useEffect(() => {
-    setConnectionStatus('connecting');
+    setConnectionStatus("connecting");
     const conn = new OrderBookConnection(
       connectionConfig,
       {
@@ -83,79 +89,104 @@ const OrderMock = () => {
       },
       "QNTX"
     );
-    
+    subRef.current = conn;
+
     conn.openConnection();
-    setConnectionStatus('connected');
-    
+    setConnectionStatus("connected");
+
     return () => {
       console.log("Unsubscribing");
-      setConnectionStatus('disconnected');
+      setConnectionStatus("disconnected");
       conn.unsubscribe();
+      subRef.current = undefined;
     };
   }, []);
 
   const formatPrice = (price: number | undefined | null) => {
-    if (price == null || isNaN(price)) return '$0.00';
+    if (price == null || isNaN(price)) return "$0.00";
     return `$${price.toFixed(2)}`;
   };
-  
+
   const formatQuantity = (quantity: number | undefined | null) => {
-    if (quantity == null || isNaN(quantity)) return '0';
+    if (quantity == null || isNaN(quantity)) return "0";
     return quantity.toLocaleString();
   };
-  
+
   const formatTotal = (total: number | undefined | null) => {
-    if (total == null || isNaN(total)) return '$0.00';
-    return `$${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (total == null || isNaN(total)) return "$0.00";
+    return `$${total.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
-  
+
+  const placeOrder = async (
+    order: Omit<OrderbookEntry, "id" | "timestamp" | "total">
+  ) => {
+    if (!subRef.current) {
+      // implement error handling for uninitialized socket connection
+      return;
+    } else {
+      await subRef.current.sendOrder(order);
+    }
+  };
+
   const formatTime = (timestamp: string | undefined | null) => {
     try {
-      if (!timestamp) return new Date().toLocaleTimeString('en-US', { 
-        hour12: false, 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit' 
-      });
-      return new Date(timestamp).toLocaleTimeString('en-US', { 
-        hour12: false, 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit' 
+      if (!timestamp)
+        return new Date().toLocaleTimeString("en-US", {
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+      return new Date(timestamp).toLocaleTimeString("en-US", {
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
       });
     } catch {
-      return new Date().toLocaleTimeString('en-US', { 
-        hour12: false, 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit' 
+      return new Date().toLocaleTimeString("en-US", {
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
       });
     }
   };
 
-  const OrderRow = ({ order, isNew }: { order: OrderbookEntry; isNew: boolean }) => {
+  const OrderRow = ({
+    order,
+    isNew,
+  }: {
+    order: OrderbookEntry;
+    isNew: boolean;
+  }) => {
     // Safety check to ensure order exists and has required properties
     if (!order || !order.id) {
       return null;
     }
 
     return (
-      <div 
+      <div
         className={`grid grid-cols-4 gap-3 py-3 px-4 rounded-lg transition-all duration-500 ${
-          isNew 
-            ? 'bg-primary/20 border border-primary/30 shadow-sm animate-pulse' 
-            : 'hover:bg-muted/50'
+          isNew
+            ? "bg-primary/20 border border-primary/30 shadow-sm animate-pulse"
+            : "hover:bg-muted/50"
         }`}
       >
-        <div className={`font-semibold ${order.type === 'Buy' ? 'text-success' : 'text-sell'}`}>
+        <div
+          className={`font-semibold ${
+            order.type === "Buy" ? "text-success" : "text-sell"
+          }`}
+        >
           {formatPrice(order.price)}
         </div>
         <div className="text-right font-medium">
           {formatQuantity(order.quantity)}
         </div>
-        <div className="text-right">
-          {formatTotal(order.total)}
-        </div>
+        <div className="text-right">{formatTotal(order.total)}</div>
         <div className="text-right text-xs text-muted-foreground flex items-center justify-end">
           <Clock className="h-3 w-3 mr-1" />
           {formatTime(order.timestamp)}
@@ -166,17 +197,26 @@ const OrderMock = () => {
 
   const ConnectionStatusBadge = () => {
     const statusConfig = {
-      connecting: { color: 'bg-warning', text: 'Connecting...', icon: Activity },
-      connected: { color: 'bg-success', text: 'Live', icon: Activity },
-      disconnected: { color: 'bg-sell', text: 'Disconnected', icon: Activity }
+      connecting: {
+        color: "bg-warning",
+        text: "Connecting...",
+        icon: Activity,
+      },
+      connected: { color: "bg-success", text: "Live", icon: Activity },
+      disconnected: { color: "bg-sell", text: "Disconnected", icon: Activity },
     };
-    
+
     const config = statusConfig[connectionStatus];
     const Icon = config.icon;
-    
+
     return (
-      <Badge variant="outline" className={`${config.color}/10 border-${config.color}/20`}>
-        <Icon className={`h-3 w-3 mr-1 ${config.color.replace('bg-', 'text-')}`} />
+      <Badge
+        variant="outline"
+        className={`${config.color}/10 border-${config.color}/20`}
+      >
+        <Icon
+          className={`h-3 w-3 mr-1 ${config.color.replace("bg-", "text-")}`}
+        />
         {config.text}
       </Badge>
     );
@@ -188,7 +228,9 @@ const OrderMock = () => {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">Live Order Feed</h1>
-          <p className="text-muted-foreground">Real-time order updates for QNTX</p>
+          <p className="text-muted-foreground">
+            Real-time order updates for QNTX
+          </p>
         </div>
         <div className="flex items-center space-x-4">
           <ConnectionStatusBadge />
@@ -218,7 +260,7 @@ const OrderMock = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -238,10 +280,12 @@ const OrderMock = () => {
               <div>
                 <p className="text-sm font-medium">Total Volume</p>
                 <p className="text-2xl font-bold">
-                  {formatQuantity([...buyOrders, ...sellOrders].reduce((sum, order) => {
-                    const quantity = order?.quantity || 0;
-                    return sum + (isNaN(quantity) ? 0 : quantity);
-                  }, 0))}
+                  {formatQuantity(
+                    [...buyOrders, ...sellOrders].reduce((sum, order) => {
+                      const quantity = order?.quantity || 0;
+                      return sum + (isNaN(quantity) ? 0 : quantity);
+                    }, 0)
+                  )}
                 </p>
               </div>
             </div>
@@ -255,10 +299,12 @@ const OrderMock = () => {
               <div>
                 <p className="text-sm font-medium">Total Value</p>
                 <p className="text-2xl font-bold">
-                  {formatTotal([...buyOrders, ...sellOrders].reduce((sum, order) => {
-                    const total = order?.total || 0;
-                    return sum + (isNaN(total) ? 0 : total);
-                  }, 0))}
+                  {formatTotal(
+                    [...buyOrders, ...sellOrders].reduce((sum, order) => {
+                      const total = order?.total || 0;
+                      return sum + (isNaN(total) ? 0 : total);
+                    }, 0)
+                  )}
                 </p>
               </div>
             </div>
@@ -274,7 +320,10 @@ const OrderMock = () => {
             <CardTitle className="flex items-center space-x-2">
               <ArrowUpCircle className="h-5 w-5 text-success" />
               <span className="text-success">Buy Orders</span>
-              <Badge variant="outline" className="ml-auto bg-success/10 text-success border-success/20">
+              <Badge
+                variant="outline"
+                className="ml-auto bg-success/10 text-success border-success/20"
+              >
                 {buyOrders.length} orders
               </Badge>
             </CardTitle>
@@ -287,7 +336,7 @@ const OrderMock = () => {
               <div className="text-right">Total</div>
               <div className="text-right">Time</div>
             </div>
-            
+
             {/* Orders List */}
             <ScrollArea className="h-[400px]">
               <div className="space-y-1 p-2">
@@ -299,12 +348,12 @@ const OrderMock = () => {
                   </div>
                 ) : (
                   buyOrders
-                    .filter(order => order && order.id)
+                    .filter((order) => order && order.id)
                     .map((order) => (
-                      <OrderRow 
-                        key={order.id} 
-                        order={order} 
-                        isNew={newOrderIds.has(order.id)} 
+                      <OrderRow
+                        key={order.id}
+                        order={order}
+                        isNew={newOrderIds.has(order.id)}
                       />
                     ))
                 )}
@@ -319,7 +368,10 @@ const OrderMock = () => {
             <CardTitle className="flex items-center space-x-2">
               <ArrowDownCircle className="h-5 w-5 text-sell" />
               <span className="text-sell">Sell Orders</span>
-              <Badge variant="outline" className="ml-auto bg-sell/10 text-sell border-sell/20">
+              <Badge
+                variant="outline"
+                className="ml-auto bg-sell/10 text-sell border-sell/20"
+              >
                 {sellOrders.length} orders
               </Badge>
             </CardTitle>
@@ -332,7 +384,7 @@ const OrderMock = () => {
               <div className="text-right">Total</div>
               <div className="text-right">Time</div>
             </div>
-            
+
             {/* Orders List */}
             <ScrollArea className="h-[400px]">
               <div className="space-y-1 p-2">
@@ -344,12 +396,12 @@ const OrderMock = () => {
                   </div>
                 ) : (
                   sellOrders
-                    .filter(order => order && order.id)
+                    .filter((order) => order && order.id)
                     .map((order) => (
-                      <OrderRow 
-                        key={order.id} 
-                        order={order} 
-                        isNew={newOrderIds.has(order.id)} 
+                      <OrderRow
+                        key={order.id}
+                        order={order}
+                        isNew={newOrderIds.has(order.id)}
                       />
                     ))
                 )}
