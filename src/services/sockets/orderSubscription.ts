@@ -21,6 +21,17 @@ interface OrderUpdateResponse {
     timestamp: string;
 }
 
+interface ErrorResponse {
+    type: "error";
+    error_message: string;
+    error: string;
+}
+
+interface OrderSuccessResponse {
+    type: "order_success";
+    message: string;
+}
+
 interface OrderbookEntry {
     id: string;
     price: number;
@@ -33,6 +44,8 @@ interface OrderbookEntry {
 interface uiFunctions {
     addOrder: (newOrder: OrderbookEntry) => void;
     setOrders: (orders: OrderbookEntry[]) => void;
+    setError: (errorMessage: string) => void;
+    setSuccess: (message: string) => void;
 }
 
 
@@ -86,7 +99,7 @@ export class OrderBookConnection extends SocketConnection {
 
     }
 
-    public messageHandler(data: OrderUpdateResponse | OrderSnapshotResponse) {
+    public messageHandler(data: OrderUpdateResponse | OrderSnapshotResponse | ErrorResponse | OrderSuccessResponse) {
 
         switch(data.type) {
             case "batch":
@@ -99,6 +112,13 @@ export class OrderBookConnection extends SocketConnection {
                     this.uiFunctions.addOrder(data.order);
                 }
                 break; 
+            
+            case "error":
+                this.uiFunctions.setError(data.error_message)
+                break;
+            case "order_success":
+                this.uiFunctions.setSuccess(data.message)
+                break;
             default:
                 // something
                 break;
@@ -117,14 +137,6 @@ export class OrderBookConnection extends SocketConnection {
         }
     }
 
-    // private getInitialData() {
-    //     const snapshotPayload: SubscriptionPayload = {
-    //         type: "orders",
-    //         subscription: "snapshot",
-    //         ticker: this.ticker,
-    //     }
-    //     this.ws.send(JSON.stringify(snapshotPayload));
-    // }
 }
 
 export default OrderBookConnection;

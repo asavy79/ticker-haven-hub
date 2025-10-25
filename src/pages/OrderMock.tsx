@@ -2,8 +2,8 @@ import OrderBookConnection from "@/services/sockets/orderSubscription";
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { OrderForm } from "@/components/OrderForm";
 import {
   TrendingUp,
   Activity,
@@ -12,7 +12,7 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
 } from "lucide-react";
-import { useFirebaseAuth } from "@/contexts/firebase-auth-context";
+import { useToast } from "@/hooks/use-toast";
 
 export interface OrderbookEntry {
   id: string;
@@ -37,10 +37,9 @@ const OrderMock = () => {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
 
-  const { user, isLoading, firebaseUser } = useFirebaseAuth();
+  const { toast } = useToast();
 
   const addOrder = (o: OrderbookEntry) => {
-    console.log("INSIDE ADD ORDER FUNCTION");
     setLastUpdate(new Date());
     setNewOrderIds((prev) => new Set(prev).add(o.id));
 
@@ -86,6 +85,21 @@ const OrderMock = () => {
         setOrders: (orders) => {
           handlersRef.current.setOrders(orders);
         },
+        setError: (error) => {
+          toast({
+            title: "Order Failed",
+            description: error,
+            variant: "destructive",
+            duration: 5000,
+          });
+        },
+        setSuccess: (message) => {
+          toast({
+            title: message,
+            description: "",
+            duration: 5000,
+          });
+        },
       },
       "QNTX"
     );
@@ -120,15 +134,17 @@ const OrderMock = () => {
     })}`;
   };
 
-  const placeOrder = async (
-    order: Omit<OrderbookEntry, "id" | "timestamp" | "total">
-  ) => {
+  const handlePlaceOrder = async (order: {
+    type: "Buy" | "Sell";
+    price: number;
+    quantity: number;
+  }) => {
     if (!subRef.current) {
-      // implement error handling for uninitialized socket connection
-      return;
-    } else {
-      await subRef.current.sendOrder(order);
+      console.log("Order connection not established!");
+      throw new Error("Order connection not established!");
     }
+
+    await subRef.current.sendOrder(order);
   };
 
   const formatTime = (timestamp: string | undefined | null) => {
@@ -233,6 +249,10 @@ const OrderMock = () => {
           </p>
         </div>
         <div className="flex items-center space-x-4">
+          <OrderForm
+            onPlaceOrder={handlePlaceOrder}
+            connectionStatus={connectionStatus}
+          />
           <ConnectionStatusBadge />
           <Badge variant="outline" className="text-sm">
             <DollarSign className="h-3 w-3 mr-1" />
