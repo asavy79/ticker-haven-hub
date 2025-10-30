@@ -23,9 +23,47 @@ export interface OrderbookEntry {
   timestamp: string;
 }
 
+// New interface for the incoming data format
+export interface OrderbookData {
+  bids: [number, number][]; // Array of [price, quantity] tuples
+  asks: [number, number][]; // Array of [price, quantity] tuples
+}
+
 const connectionConfig = {
   url: "ws://localhost:8765",
   params: "",
+};
+
+// Utility functions to transform new data format to OrderbookEntry format
+const transformTupleToOrderbookEntry = (
+  tuple: [number, number],
+  type: "Buy" | "Sell",
+  index: number
+): OrderbookEntry => {
+  const [price, quantity] = tuple;
+  const total = price * quantity;
+  const timestamp = new Date().toISOString();
+
+  return {
+    id: `${type.toLowerCase()}-${price}-${quantity}-${index}-${Date.now()}`,
+    price,
+    quantity,
+    total,
+    type,
+    timestamp,
+  };
+};
+
+const transformOrderbookData = (data: OrderbookData): OrderbookEntry[] => {
+  const buyOrders = data.bids.map((tuple, index) =>
+    transformTupleToOrderbookEntry(tuple, "Buy", index)
+  );
+
+  const sellOrders = data.asks.map((tuple, index) =>
+    transformTupleToOrderbookEntry(tuple, "Sell", index)
+  );
+
+  return [...buyOrders, ...sellOrders];
 };
 
 const OrderMock = () => {
@@ -59,11 +97,23 @@ const OrderMock = () => {
     }
   };
 
-  const setOrders = (snapshot: OrderbookEntry[]) => {
-    console.log("INSIDE SET ORDERS FUNCTION!");
+  const setOrders = (snapshot: OrderbookEntry[] | OrderbookData) => {
+    console.log("INSIDE SET ORDERS FUNCTION!", snapshot);
     setLastUpdate(new Date());
-    const sells = snapshot.filter((o) => o.type === "Sell");
-    const buys = snapshot.filter((o) => o.type === "Buy");
+
+    let processedOrders: OrderbookEntry[];
+
+    // Check if the data is in the new format (has bids/asks properties)
+    if ("bids" in snapshot && "asks" in snapshot) {
+      // New format: transform the data
+      processedOrders = transformOrderbookData(snapshot as OrderbookData);
+    } else {
+      // Old format: use as is
+      processedOrders = snapshot as OrderbookEntry[];
+    }
+
+    const sells = processedOrders.filter((o) => o.type === "Sell");
+    const buys = processedOrders.filter((o) => o.type === "Buy");
 
     setBuyOrders(buys.slice(0, 50));
     setSellOrders(sells.slice(0, 50));
@@ -144,7 +194,7 @@ const OrderMock = () => {
       throw new Error("Order connection not established!");
     }
 
-    await subRef.current.sendOrder(order);
+    await subRef.current.sendOrder({ ...order, ticker: "QNTX" });
   };
 
   const formatTime = (timestamp: string | undefined | null) => {

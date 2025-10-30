@@ -9,9 +9,15 @@ interface SubscriptionPayload {
     ticker: string;
 }
 
+// New interface for the incoming data format
+interface OrderbookData {
+    bids: [number, number][]; // Array of [price, quantity] tuples
+    asks: [number, number][]; // Array of [price, quantity] tuples
+}
+
 interface OrderSnapshotResponse {
     type: "batch";
-    orders: OrderbookEntry[];
+    orders: OrderbookEntry[] | OrderbookData;
     timestamp: string;
 }
 
@@ -39,11 +45,12 @@ interface OrderbookEntry {
     total: number;
     type: string;
     timestamp: string;
-  }
+    ticker: string;
+}
 
 interface uiFunctions {
     addOrder: (newOrder: OrderbookEntry) => void;
-    setOrders: (orders: OrderbookEntry[]) => void;
+    setOrders: (orders: OrderbookEntry[] | OrderbookData) => void;
     setError: (errorMessage: string) => void;
     setSuccess: (message: string) => void;
 }
@@ -52,7 +59,7 @@ interface uiFunctions {
 export class OrderBookConnection extends SocketConnection {
 
     protected addOrder: (newOrder: OrderbookEntry) => void;
-    protected setOrders: (orders: OrderbookEntry[]) => void;
+    protected setOrders: (orders: OrderbookEntry[] | OrderbookData) => void;
     protected isLoaded: boolean;
     protected ticker: string;
     protected initialDataLoaded: boolean;
@@ -100,19 +107,18 @@ export class OrderBookConnection extends SocketConnection {
     }
 
     public messageHandler(data: OrderUpdateResponse | OrderSnapshotResponse | ErrorResponse | OrderSuccessResponse) {
-
-        switch(data.type) {
+        switch (data.type) {
             case "batch":
-                console.log(data.orders);
+                console.log("ORDERS", data.orders);
                 this.uiFunctions.setOrders(data.orders);
                 this.initialDataLoaded = true;
                 break;
             case "update":
-                if(this.initialDataLoaded) {
+                if (this.initialDataLoaded) {
                     this.uiFunctions.addOrder(data.order);
                 }
-                break; 
-            
+                break;
+
             case "error":
                 this.uiFunctions.setError(data.error_message)
                 break;
@@ -128,16 +134,16 @@ export class OrderBookConnection extends SocketConnection {
     public async sendOrder(order: Omit<OrderbookEntry, "id" | "timestamp" | "total">) {
         try {
             const token = await getFirebaseToken();
-            if(!token) {
+            if (!token) {
                 console.error("No token found!");
             }
-            this.ws.send(JSON.stringify({type: "order", order: order, token: token}));
-        } catch(error) {
+            this.ws.send(JSON.stringify({ type: "order", order: order, token: token }));
+        } catch (error) {
             console.error(error);
         }
     }
 
-    private getUrl() {
+    public getUrl() {
         return `${this.url}/ws/${this.ticker}`
     }
 
