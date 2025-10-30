@@ -37,3 +37,12 @@ export async function updateAccountBalance(userId: string, amount: number) {
         return {success: false, error: error};
     }
 }
+
+export async function getAllUsers() {
+    try {
+        const res = await api.get("/accounts");
+        return {success: true, accounts: res.data};
+    } catch(error) {
+        return {success: false, error: error};
+    }
+}
