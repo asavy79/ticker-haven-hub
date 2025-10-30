@@ -137,6 +137,10 @@ export class OrderBookConnection extends SocketConnection {
         }
     }
 
+    private getUrl() {
+        return `${this.url}/ws/${this.ticker}`
+    }
+
 }
 
 export default OrderBookConnection;

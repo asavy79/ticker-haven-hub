@@ -62,6 +62,12 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
         if (!firebaseUser && !window.location.pathname.includes("/auth")) {
           navigate("/auth");
         }
+        // later add real check when in production
+        const isAdmin = true;
+
+        if (!isAdmin && window.location.pathname.includes("/admin")) {
+          navigate("/orderbook");
+        }
       }
     );
 

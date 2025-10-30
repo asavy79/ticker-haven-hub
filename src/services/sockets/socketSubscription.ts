@@ -32,6 +32,8 @@ abstract class SocketConnection {
 
     abstract openConnection(): void;
 
+    abstract getUrl(): string;
+
 
     public unsubscribe() {
         try {
@@ -46,7 +48,8 @@ abstract class SocketConnection {
             return;
           }
         try {
-            this.ws = new WebSocket(this.url);
+            const url = this.getUrl();
+            this.ws = new WebSocket(url);
         } catch(error) {
             console.error(error);
         }
@@ -56,6 +59,7 @@ abstract class SocketConnection {
         this.ws.send(JSON.stringify(subscribePayload));
     }
     
+
 
 
 }

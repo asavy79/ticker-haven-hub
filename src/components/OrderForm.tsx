@@ -82,25 +82,17 @@ export const OrderForm = ({
       const quantity = parseInt(orderQuantity);
 
       await onPlaceOrder({ type: orderType, price, quantity });
-
-      // toast({
-      //   title: "Order Placed Successfully",
-      //   description: "",
-      //   duration: 5000,
-      // });
-
-      // Reset form and close dialog
       setOrderPrice("");
       setOrderQuantity("");
       setIsOpen(false);
     } catch (error) {
       console.error("Error placing order:", error);
-      // toast({
-      //   title: "Order Failed",
-      //   description: "There was an error placing your order. Please try again.",
-      //   variant: "destructive",
-      //   duration: 5000,
-      // });
+      toast({
+        title: "Order Failed",
+        description: "There was an error placing your order. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      });
       setErrors({ general: "Failed to place order. Please try again." });
     } finally {
       setIsSubmitting(false);
