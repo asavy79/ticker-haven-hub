@@ -11,8 +11,16 @@ import {
   DollarSign,
   ArrowUpCircle,
   ArrowDownCircle,
+  ChevronDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface OrderbookEntry {
   id: string;
@@ -27,6 +35,8 @@ export interface OrderbookEntry {
 export interface OrderbookData {
   bids: [number, number][]; // Array of [price, quantity] tuples
   asks: [number, number][]; // Array of [price, quantity] tuples
+  total_bids: number; // Total volume of all bids
+  total_asks: number; // Total volume of all asks
 }
 
 const connectionConfig = {
@@ -66,6 +76,9 @@ const transformOrderbookData = (data: OrderbookData): OrderbookEntry[] => {
   return [...buyOrders, ...sellOrders];
 };
 
+// Available tickers for selection
+const AVAILABLE_TICKERS = ["QNTX"];
+
 const OrderMock = () => {
   const [buyOrders, setBuyOrders] = useState<OrderbookEntry[]>([]);
   const [sellOrders, setSellOrders] = useState<OrderbookEntry[]>([]);
@@ -74,6 +87,10 @@ const OrderMock = () => {
   >("connecting");
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
+  const [selectedTicker, setSelectedTicker] = useState<string>("QNTX");
+  const [totalBids, setTotalBids] = useState<number>(0);
+  const [totalAsks, setTotalAsks] = useState<number>(0);
+  const [maxQuantity, setMaxQuantity] = useState<number>(0);
 
   const { toast } = useToast();
 
@@ -105,11 +122,30 @@ const OrderMock = () => {
 
     // Check if the data is in the new format (has bids/asks properties)
     if ("bids" in snapshot && "asks" in snapshot) {
-      // New format: transform the data
-      processedOrders = transformOrderbookData(snapshot as OrderbookData);
+      // New format: transform the data and extract totals
+      const orderbookData = snapshot as OrderbookData;
+      processedOrders = transformOrderbookData(orderbookData);
+      
+      // Update total bids and asks
+      setTotalBids(orderbookData.total_bids || 0);
+      setTotalAsks(orderbookData.total_asks || 0);
+      
+      // Calculate max quantity for visual bars
+      const allQuantities = [...orderbookData.bids, ...orderbookData.asks].map(([_, qty]) => qty);
+      setMaxQuantity(Math.max(...allQuantities, 1));
     } else {
       // Old format: use as is
       processedOrders = snapshot as OrderbookEntry[];
+      
+      // Calculate totals from processed orders
+      const buys = processedOrders.filter((o) => o.type === "Buy");
+      const sells = processedOrders.filter((o) => o.type === "Sell");
+      setTotalBids(buys.reduce((sum, order) => sum + (order.quantity || 0), 0));
+      setTotalAsks(sells.reduce((sum, order) => sum + (order.quantity || 0), 0));
+      
+      // Calculate max quantity for visual bars
+      const allQuantities = processedOrders.map(order => order.quantity || 0);
+      setMaxQuantity(Math.max(...allQuantities, 1));
     }
 
     const sells = processedOrders.filter((o) => o.type === "Sell");
@@ -151,7 +187,7 @@ const OrderMock = () => {
           });
         },
       },
-      "QNTX"
+      selectedTicker
     );
     subRef.current = conn;
 
@@ -164,7 +200,7 @@ const OrderMock = () => {
       conn.unsubscribe();
       subRef.current = undefined;
     };
-  }, []);
+  }, [selectedTicker]);
 
   const formatPrice = (price: number | undefined | null) => {
     if (price == null || isNaN(price)) return "$0.00";
@@ -194,7 +230,7 @@ const OrderMock = () => {
       throw new Error("Order connection not established!");
     }
 
-    await subRef.current.sendOrder({ ...order, ticker: "QNTX" });
+    await subRef.current.sendOrder({ ...order, ticker: selectedTicker });
   };
 
   const formatTime = (timestamp: string | undefined | null) => {
@@ -234,6 +270,10 @@ const OrderMock = () => {
       return null;
     }
 
+    // Calculate bar width as percentage of max quantity
+    const barWidth = maxQuantity > 0 ? (order.quantity / maxQuantity) * 100 : 0;
+    const isBuy = order.type === "Buy";
+
     return (
       <div
         className={`grid grid-cols-4 gap-3 py-3 px-4 rounded-lg transition-all duration-500 ${
@@ -244,13 +284,20 @@ const OrderMock = () => {
       >
         <div
           className={`font-semibold ${
-            order.type === "Buy" ? "text-success" : "text-sell"
+            isBuy ? "text-success" : "text-sell"
           }`}
         >
           {formatPrice(order.price)}
         </div>
-        <div className="text-right font-medium">
-          {formatQuantity(order.quantity)}
+        <div className="text-right font-medium relative">
+          {/* Simple visual bar behind quantity */}
+          <div
+            className={`absolute right-0 top-0 bottom-0 opacity-20 ${
+              isBuy ? "bg-success" : "bg-sell"
+            }`}
+            style={{ width: `${barWidth}%` }}
+          />
+          <span className="relative z-10">{formatQuantity(order.quantity)}</span>
         </div>
         <div className="text-right">{formatTotal(order.total)}</div>
         <div className="text-right text-xs text-muted-foreground flex items-center justify-end">
@@ -295,10 +342,27 @@ const OrderMock = () => {
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">Live Order Feed</h1>
           <p className="text-muted-foreground">
-            Real-time order updates for QNTX
+            Real-time order updates for {selectedTicker}
           </p>
         </div>
         <div className="flex items-center space-x-4">
+          {/* Ticker Selection */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-muted-foreground">Ticker:</span>
+            <Select value={selectedTicker} onValueChange={setSelectedTicker}>
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AVAILABLE_TICKERS.map((ticker) => (
+                  <SelectItem key={ticker} value={ticker}>
+                    {ticker}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           <OrderForm
             onPlaceOrder={handlePlaceOrder}
             connectionStatus={connectionStatus}
@@ -306,7 +370,7 @@ const OrderMock = () => {
           <ConnectionStatusBadge />
           <Badge variant="outline" className="text-sm">
             <DollarSign className="h-3 w-3 mr-1" />
-            QNTX
+            {selectedTicker}
           </Badge>
           <div className="text-right text-sm text-muted-foreground">
             <div className="flex items-center">
@@ -322,10 +386,10 @@ const OrderMock = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <ArrowUpCircle className="h-4 w-4 text-success" />
+              <TrendingUp className="h-4 w-4 text-success" />
               <div>
-                <p className="text-sm font-medium text-success">Buy Orders</p>
-                <p className="text-2xl font-bold">{buyOrders.length}</p>
+                <p className="text-sm font-medium text-success">Total Bids</p>
+                <p className="text-2xl font-bold">{formatQuantity(totalBids)}</p>
               </div>
             </div>
           </CardContent>
@@ -334,10 +398,10 @@ const OrderMock = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <ArrowDownCircle className="h-4 w-4 text-sell" />
+              <TrendingUp className="h-4 w-4 text-sell" />
               <div>
-                <p className="text-sm font-medium text-sell">Sell Orders</p>
-                <p className="text-2xl font-bold">{sellOrders.length}</p>
+                <p className="text-sm font-medium text-sell">Total Asks</p>
+                <p className="text-2xl font-bold">{formatQuantity(totalAsks)}</p>
               </div>
             </div>
           </CardContent>
@@ -350,12 +414,7 @@ const OrderMock = () => {
               <div>
                 <p className="text-sm font-medium">Total Volume</p>
                 <p className="text-2xl font-bold">
-                  {formatQuantity(
-                    [...buyOrders, ...sellOrders].reduce((sum, order) => {
-                      const quantity = order?.quantity || 0;
-                      return sum + (isNaN(quantity) ? 0 : quantity);
-                    }, 0)
-                  )}
+                  {formatQuantity(totalBids + totalAsks)}
                 </p>
               </div>
             </div>
@@ -406,6 +465,13 @@ const OrderMock = () => {
               <div className="text-right">Total</div>
               <div className="text-right">Time</div>
             </div>
+            {/* Visual indicator for trading ladder */}
+            <div className="px-4 py-2 bg-success/5 border-b text-xs text-muted-foreground">
+              <div className="flex items-center justify-between">
+                <span>📊 Visual bars show relative quantity sizes</span>
+                <span>Total Bids: {formatQuantity(totalBids)}</span>
+              </div>
+            </div>
 
             {/* Orders List */}
             <ScrollArea className="h-[400px]">
@@ -453,6 +519,13 @@ const OrderMock = () => {
               <div className="text-right">Quantity</div>
               <div className="text-right">Total</div>
               <div className="text-right">Time</div>
+            </div>
+            {/* Visual indicator for trading ladder */}
+            <div className="px-4 py-2 bg-sell/5 border-b text-xs text-muted-foreground">
+              <div className="flex items-center justify-between">
+                <span>📊 Visual bars show relative quantity sizes</span>
+                <span>Total Asks: {formatQuantity(totalAsks)}</span>
+              </div>
             </div>
 
             {/* Orders List */}

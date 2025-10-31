@@ -13,6 +13,8 @@ interface SubscriptionPayload {
 interface OrderbookData {
     bids: [number, number][]; // Array of [price, quantity] tuples
     asks: [number, number][]; // Array of [price, quantity] tuples
+    total_bids: number; // Total volume of all bids
+    total_asks: number; // Total volume of all asks
 }
 
 interface OrderSnapshotResponse {
@@ -118,7 +120,6 @@ export class OrderBookConnection extends SocketConnection {
                     this.uiFunctions.addOrder(data.order);
                 }
                 break;
-
             case "error":
                 this.uiFunctions.setError(data.error_message)
                 break;
