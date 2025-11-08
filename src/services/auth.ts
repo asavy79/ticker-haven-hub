@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { UserSignUp, UserSignIn, AppUser, AuthError } from '@/types/auth';
-import { getAccount, createAccount } from './admin/adminAuth';
+import { getAccount, createAccountIfNotExists } from './admin/adminAuth';
 import { getAuth } from "firebase/auth";
 
 // Helper function to convert Firebase user to AppUser
@@ -169,14 +169,14 @@ export async function signInWithGoogle(): Promise<{ success: true; user: AppUser
 
 
         // if (!userProfile) {
-        //     const createAccountResult = await createAccount(appUser);
-        //     if (!createAccountResult.success) {
-        //         await signOutUser();
-        //         return {
-        //             success: false,
-        //             error: { code: 'auth/account-not-found', message: 'Account not found.' },
-        //         };
-        //     }
+        // const createAccountResult = await createAccount(appUser);
+        // if (!createAccountResult.success) {
+        //     await signOutUser();
+        //     return {
+        //         success: false,
+        //         error: { code: 'auth/account-not-found', message: 'Account not found.' },
+        //     };
+        // }
         // }
 
         return {

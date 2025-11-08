@@ -40,7 +40,7 @@ export interface OrderbookData {
 }
 
 const connectionConfig = {
-  url: "ws://localhost:8765",
+  url: "ws://localhost:8000",
   params: "",
 };
 
@@ -125,26 +125,30 @@ const OrderMock = () => {
       // New format: transform the data and extract totals
       const orderbookData = snapshot as OrderbookData;
       processedOrders = transformOrderbookData(orderbookData);
-      
+
       // Update total bids and asks
       setTotalBids(orderbookData.total_bids || 0);
       setTotalAsks(orderbookData.total_asks || 0);
-      
+
       // Calculate max quantity for visual bars
-      const allQuantities = [...orderbookData.bids, ...orderbookData.asks].map(([_, qty]) => qty);
+      const allQuantities = [...orderbookData.bids, ...orderbookData.asks].map(
+        ([_, qty]) => qty
+      );
       setMaxQuantity(Math.max(...allQuantities, 1));
     } else {
       // Old format: use as is
       processedOrders = snapshot as OrderbookEntry[];
-      
+
       // Calculate totals from processed orders
       const buys = processedOrders.filter((o) => o.type === "Buy");
       const sells = processedOrders.filter((o) => o.type === "Sell");
       setTotalBids(buys.reduce((sum, order) => sum + (order.quantity || 0), 0));
-      setTotalAsks(sells.reduce((sum, order) => sum + (order.quantity || 0), 0));
-      
+      setTotalAsks(
+        sells.reduce((sum, order) => sum + (order.quantity || 0), 0)
+      );
+
       // Calculate max quantity for visual bars
-      const allQuantities = processedOrders.map(order => order.quantity || 0);
+      const allQuantities = processedOrders.map((order) => order.quantity || 0);
       setMaxQuantity(Math.max(...allQuantities, 1));
     }
 
@@ -283,9 +287,7 @@ const OrderMock = () => {
         }`}
       >
         <div
-          className={`font-semibold ${
-            isBuy ? "text-success" : "text-sell"
-          }`}
+          className={`font-semibold ${isBuy ? "text-success" : "text-sell"}`}
         >
           {formatPrice(order.price)}
         </div>
@@ -297,7 +299,9 @@ const OrderMock = () => {
             }`}
             style={{ width: `${barWidth}%` }}
           />
-          <span className="relative z-10">{formatQuantity(order.quantity)}</span>
+          <span className="relative z-10">
+            {formatQuantity(order.quantity)}
+          </span>
         </div>
         <div className="text-right">{formatTotal(order.total)}</div>
         <div className="text-right text-xs text-muted-foreground flex items-center justify-end">
@@ -348,7 +352,9 @@ const OrderMock = () => {
         <div className="flex items-center space-x-4">
           {/* Ticker Selection */}
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-muted-foreground">Ticker:</span>
+            <span className="text-sm font-medium text-muted-foreground">
+              Ticker:
+            </span>
             <Select value={selectedTicker} onValueChange={setSelectedTicker}>
               <SelectTrigger className="w-24">
                 <SelectValue />
@@ -362,7 +368,7 @@ const OrderMock = () => {
               </SelectContent>
             </Select>
           </div>
-          
+
           <OrderForm
             onPlaceOrder={handlePlaceOrder}
             connectionStatus={connectionStatus}
@@ -389,7 +395,9 @@ const OrderMock = () => {
               <TrendingUp className="h-4 w-4 text-success" />
               <div>
                 <p className="text-sm font-medium text-success">Total Bids</p>
-                <p className="text-2xl font-bold">{formatQuantity(totalBids)}</p>
+                <p className="text-2xl font-bold">
+                  {formatQuantity(totalBids)}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -401,7 +409,9 @@ const OrderMock = () => {
               <TrendingUp className="h-4 w-4 text-sell" />
               <div>
                 <p className="text-sm font-medium text-sell">Total Asks</p>
-                <p className="text-2xl font-bold">{formatQuantity(totalAsks)}</p>
+                <p className="text-2xl font-bold">
+                  {formatQuantity(totalAsks)}
+                </p>
               </div>
             </div>
           </CardContent>

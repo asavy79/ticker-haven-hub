@@ -49,7 +49,7 @@ type AccountRole = 'admin' | 'moderator' | 'user';
 
 export async function createAccountIfNotExists(user: AppUser): Promise<AccountCreateResponse> {
     try {
-        const result = await api.post('/auth/sign-up', {
+        const result = await api.post('/accounts', {
             user,
         });
 
