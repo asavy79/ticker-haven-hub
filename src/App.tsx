@@ -53,7 +53,7 @@ const App = () => (
                 path="/orderbook"
                 element={
                   <Layout>
-                    <Orderbook />
+                    <OrderMock />
                   </Layout>
                 }
               />
@@ -82,18 +82,10 @@ const App = () => (
                 }
               />
               <Route
-                path="/admin/members/:id"
+                path="/admin/members/:accountId"
                 element={
                   <Layout>
                     <MemberDetail />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/mock-orderbook"
-                element={
-                  <Layout>
-                    <OrderMock />
                   </Layout>
                 }
               />

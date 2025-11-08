@@ -1,40 +1,36 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, TrendingUp, Calendar, DollarSign, Activity } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Users, TrendingUp, Calendar, DollarSign, Activity, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AdminService } from "@/services/admin";
+import { AdminStats } from "@/types/admin";
 
 const Admin = () => {
-  const stats = {
-    totalMembers: 156,
-    activeTraders: 89,
-    totalMeetings: 24,
-    totalCreditsIssued: 15600,
-    totalTrades: 234
-  };
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const recentActivity = [
-    {
-      type: "member_joined",
-      message: "Sarah Johnson joined CU Quants",
-      timestamp: "2 minutes ago"
-    },
-    {
-      type: "trade_placed", 
-      message: "Mike Chen placed a $500 buy order",
-      timestamp: "5 minutes ago"
-    },
-    {
-      type: "meeting_completed",
-      message: "Options Workshop completed - 45 attendees",
-      timestamp: "1 hour ago"
-    },
-    {
-      type: "credits_issued",
-      message: "100 credits issued to 45 members",
-      timestamp: "1 hour ago"
-    }
-  ];
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const adminStats = await AdminService.getAdminStats();
+        setStats(adminStats);
+      } catch (err) {
+        console.error('Error fetching admin stats:', err);
+        setError('Failed to load dashboard statistics. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -45,16 +41,28 @@ const Admin = () => {
         </Badge>
       </div>
 
+      {/* Error State */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Members</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalMembers}</div>
-            <p className="text-xs text-muted-foreground">+12 from last month</p>
+            {loading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{stats?.totalMembers || 0}</div>
+            )}
+            <p className="text-xs text-muted-foreground">Registered users</p>
           </CardContent>
         </Card>
 
@@ -64,19 +72,14 @@ const Admin = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeTraders}</div>
-            <p className="text-xs text-muted-foreground">57% of total members</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Meetings</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalMeetings}</div>
-            <p className="text-xs text-muted-foreground">This semester</p>
+            {loading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{stats?.activeTraders || 0}</div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {stats?.totalMembers ? Math.round((stats.activeTraders / stats.totalMembers) * 100) : 0}% of total members
+            </p>
           </CardContent>
         </Card>
 
@@ -86,8 +89,12 @@ const Admin = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCreditsIssued.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">All time</p>
+            {loading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : (
+              <div className="text-2xl font-bold">{stats?.totalCreditsIssued.toLocaleString() || 0}</div>
+            )}
+            <p className="text-xs text-muted-foreground">Total balance across all accounts</p>
           </CardContent>
         </Card>
 
@@ -97,8 +104,12 @@ const Admin = () => {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalTrades}</div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            {loading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{stats?.totalTrades || 0}</div>
+            )}
+            <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
         </Card>
       </div>
@@ -109,48 +120,31 @@ const Admin = () => {
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Link to="/admin/members">
-              <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2">
+              <Button className="w-full h-20 flex flex-col items-center justify-center space-y-2" disabled={loading}>
                 <Users className="h-6 w-6" />
                 <span>Manage Members</span>
               </Button>
             </Link>
             
-            <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
-              <Calendar className="h-6 w-6" />
-              <span>Create Meeting</span>
-            </Button>
-            
-            <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
-              <DollarSign className="h-6 w-6" />
-              <span>Issue Credits</span>
-            </Button>
-            
-            <Button variant="outline" className="w-full h-20 flex flex-col items-center justify-center space-y-2">
+            <Button 
+              variant="outline" 
+              className="w-full h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={() => window.location.reload()}
+            >
               <Activity className="h-6 w-6" />
-              <span>View Reports</span>
+              <span>Refresh Data</span>
             </Button>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center space-x-4 p-3 border rounded-lg">
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{activity.message}</p>
-                  <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
-                </div>
-              </div>
-            ))}
+            <Button 
+              variant="outline" 
+              className="w-full h-20 flex flex-col items-center justify-center space-y-2"
+              disabled
+            >
+              <DollarSign className="h-6 w-6" />
+              <span>Bulk Actions</span>
+            </Button>
           </div>
         </CardContent>
       </Card>
