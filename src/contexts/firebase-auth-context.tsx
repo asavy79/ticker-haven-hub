@@ -51,7 +51,10 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
       auth,
-      (firebaseUser: FirebaseUser | null) => {
+      async (firebaseUser: FirebaseUser | null) => {
+        const idTokenResult = await firebaseUser.getIdTokenResult();
+        const userRole = idTokenResult.claims.role;
+
         setAuthState((prev) => ({
           ...prev,
           firebaseUser,
@@ -63,7 +66,7 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
           navigate("/auth");
         }
         // later add real check when in production
-        const isAdmin = true;
+        const isAdmin = userRole == "ADMIN" || userRole == "OWNER";
 
         if (!isAdmin && window.location.pathname.includes("/admin")) {
           navigate("/orderbook");

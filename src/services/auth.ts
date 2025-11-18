@@ -13,6 +13,7 @@ import { auth } from '@/lib/firebase';
 import { UserSignUp, UserSignIn, AppUser, AuthError } from '@/types/auth';
 import { getAccount, createAccountIfNotExists } from './admin/adminAuth';
 import { getAuth } from "firebase/auth";
+import { appendFile } from 'fs';
 
 // Helper function to convert Firebase user to AppUser
 export function firebaseUserToAppUser(firebaseUser: FirebaseUser): AppUser {
@@ -152,32 +153,24 @@ export async function signInWithGoogle(): Promise<{ success: true; user: AppUser
                 success: false,
                 error: { code: 'auth/invalid-email', message: 'Please use a Colorado email address.' },
             };
-
         }
 
-        // const accountResult = await getAccount(appUser.uid);
+        const token = await getFirebaseToken();
 
-        // if (!accountResult.success) {
-        //     await signOutUser();
-        //     return {
-        //         success: false,
-        //         error: { code: 'auth/account-not-found', message: 'Account not found.' },
-        //     };
-        // }
-
-        // const userProfile = accountResult.user;
+        const accountResult = await getAccount(token);
 
 
-        // if (!userProfile) {
-        // const createAccountResult = await createAccount(appUser);
-        // if (!createAccountResult.success) {
-        //     await signOutUser();
-        //     return {
-        //         success: false,
-        //         error: { code: 'auth/account-not-found', message: 'Account not found.' },
-        //     };
-        // }
-        // }
+        if (accountResult.success) {
+            console.log(accountResult.user);
+        }
+        else {
+            return {
+                success: false,
+                error: {code: 'auth/invalid-token', message: 'Invalid auth token!'}
+            }
+        }
+
+        await getFirebaseToken()
 
         return {
             success: true,
