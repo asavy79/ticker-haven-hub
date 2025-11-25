@@ -1,5 +1,6 @@
 import api from '@/lib/api';
 import { AppUser, AuthError } from '@/types/auth';
+import { getFirebaseToken } from '../auth';
 
 
 export async function getUserOrders(userId: string) {
@@ -31,6 +32,7 @@ export async function getUserPositions(userId: string) {
 
 export async function updateAccountBalance(userId: string, amount: number) {
     try {
+        const token = await getFirebaseToken()
         await api.put(`/accounts/${userId}/balance`, {amount});
         return {success: true, amount: amount};
     } catch(error) {

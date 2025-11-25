@@ -161,4 +161,12 @@ export class AdminService {
         });
         return response.data;
     }
+
+    // Update account role (admin only)
+    static async updateAccountRole(accountId: number, role: string): Promise<AccountDTO> {
+        const response = await axiosInstance.patch(`/api/v1/accounts/${accountId}/role`, {
+            role
+        });
+        return response.data;
+    }
 }

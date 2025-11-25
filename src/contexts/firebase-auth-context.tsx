@@ -52,8 +52,12 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
     const unsubscribe = onAuthStateChanged(
       auth,
       async (firebaseUser: FirebaseUser | null) => {
-        const idTokenResult = await firebaseUser.getIdTokenResult();
-        const userRole = idTokenResult.claims.role;
+        let userRole = null;
+
+        if (firebaseUser) {
+          const idTokenResult = await firebaseUser.getIdTokenResult();
+          userRole = idTokenResult.claims.role;
+        }
 
         setAuthState((prev) => ({
           ...prev,
@@ -65,6 +69,7 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
         if (!firebaseUser && !window.location.pathname.includes("/auth")) {
           navigate("/auth");
         }
+        // const userRole = "ADMIN";
         // later add real check when in production
         const isAdmin = userRole == "ADMIN" || userRole == "OWNER";
 
@@ -117,6 +122,7 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
     setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     const result = await signOutUser();
+    console.log("DONE");
 
     if (result.success) {
       navigate("/");

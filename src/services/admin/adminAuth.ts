@@ -106,7 +106,7 @@ export async function createAccountIfNotExists(user: AppUser): Promise<AccountCr
 
 export async function setAccountRole(userId: string, role: AccountRole): Promise<AccountRoleUpdateResponse> {
     try {
-        const result = await api.put(`/auth/set-role/${userId}`, {
+        const result = await api.patch(`/accounts/${userId}/role`, {
             role,
         });
         return {

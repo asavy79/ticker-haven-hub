@@ -15,6 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ArrowLeft,
   User,
   Mail,
@@ -39,10 +46,13 @@ const MemberDetail = () => {
   const { accountId } = useParams<{ accountId: string }>();
   const navigate = useNavigate();
   const [isEditBalanceOpen, setIsEditBalanceOpen] = useState(false);
+  const [isEditRoleOpen, setIsEditRoleOpen] = useState(false);
   const [newBalance, setNewBalance] = useState("");
+  const [newRole, setNewRole] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [updatingRole, setUpdatingRole] = useState(false);
 
   // State for member data
   const [member, setMember] = useState<AccountDTO | null>(null);
@@ -140,45 +150,79 @@ const MemberDetail = () => {
     }
   };
 
+  const handleEditRole = async () => {
+    if (!newRole || !member || !accountId) return;
+
+    try {
+      setUpdatingRole(true);
+      const accountIdNum = parseInt(accountId);
+
+      const updatedMember = await AdminService.updateAccountRole(
+        accountIdNum,
+        newRole
+      );
+      setMember(updatedMember);
+
+      toast({
+        title: "Role Updated",
+        description: `${member.username}'s role updated to ${newRole}`,
+      });
+      setIsEditRoleOpen(false);
+      setNewRole("");
+    } catch (err) {
+      console.error("Error updating role:", err);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update role. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingRole(false);
+    }
+  };
+
   const getRoleBadge = (role: AccountRole | string) => {
     // Handle both enum values and string values from backend
-    const normalizedRole = typeof role === 'string' ? role.toUpperCase() : role;
+    const normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
     
-    const roleConfig = {
+    const roleConfig: Record<string, { variant: "default" | "secondary" | "outline"; className: string }> = {
       [AccountRole.PRESIDENT]: {
-        variant: "default" as const,
+        variant: "default",
         className: "bg-primary text-primary-foreground",
       },
       [AccountRole.VICE_PRESIDENT]: {
-        variant: "secondary" as const,
+        variant: "secondary",
         className: "bg-secondary text-secondary-foreground",
       },
       [AccountRole.TREASURER]: {
-        variant: "secondary" as const,
+        variant: "secondary",
         className: "bg-secondary text-secondary-foreground",
       },
       [AccountRole.ADMIN]: {
-        variant: "outline" as const,
+        variant: "outline",
         className: "border-primary text-primary",
       },
       [AccountRole.MODERATOR]: {
-        variant: "outline" as const,
+        variant: "outline",
         className: "border-orange-500 text-orange-600",
       },
-      [AccountRole.MEMBER]: { variant: "outline" as const, className: "" },
-      [AccountRole.USER]: { variant: "outline" as const, className: "" }, // Handle 'user' role
-      'USER': { variant: "outline" as const, className: "" }, // Handle uppercase 'USER'
+      [AccountRole.OWNER]: {
+        variant: "default",
+        className: "bg-red-600 text-white",
+      },
+      [AccountRole.MEMBER]: { variant: "outline", className: "" },
+      [AccountRole.USER]: { variant: "outline", className: "" },
     };
 
-    const config = roleConfig[normalizedRole as keyof typeof roleConfig] || roleConfig[AccountRole.MEMBER];
+    const config = roleConfig[normalizedRole] || roleConfig[AccountRole.USER];
     
     // Display name mapping
     const displayNames: Record<string, string> = {
       'user': 'User',
-      'USER': 'User',
+      'admin': 'Admin',
+      'moderator': 'Moderator',
+      'owner': 'Owner',
       'MEMBER': 'Member',
-      'ADMIN': 'Admin',
-      'MODERATOR': 'Moderator',
       'TREASURER': 'Treasurer',
       'VICE_PRESIDENT': 'Vice President',
       'PRESIDENT': 'President'
@@ -424,6 +468,50 @@ const MemberDetail = () => {
                       disabled={updating || !newBalance}
                     >
                       {updating ? "Updating..." : "Update Balance"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog
+                open={isEditRoleOpen}
+                onOpenChange={setIsEditRoleOpen}
+              >
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Role
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Edit Account Role</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="role">New Role</Label>
+                      <Select
+                        value={newRole}
+                        onValueChange={setNewRole}
+                        disabled={updatingRole}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={`Current: ${member.role}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="moderator">Moderator</SelectItem>
+                          <SelectItem value="owner">Owner</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      onClick={handleEditRole}
+                      className="w-full"
+                      disabled={updatingRole || !newRole}
+                    >
+                      {updatingRole ? "Updating..." : "Update Role"}
                     </Button>
                   </div>
                 </DialogContent>

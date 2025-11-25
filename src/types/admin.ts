@@ -3,8 +3,9 @@
 export enum AccountRole {
     MEMBER = "MEMBER",
     USER = "user", // Add support for backend's 'user' role
-    ADMIN = "ADMIN",
-    MODERATOR = "MODERATOR",
+    ADMIN = "admin", // Backend uses lowercase 'admin'
+    MODERATOR = "moderator", // Backend uses lowercase 'moderator'
+    OWNER = "owner", // Backend uses lowercase 'owner'
     TREASURER = "TREASURER",
     VICE_PRESIDENT = "VICE_PRESIDENT",
     PRESIDENT = "PRESIDENT"
