@@ -15,12 +15,15 @@ interface OrderbookData {
     asks: [number, number][]; // Array of [price, quantity] tuples
     total_bids: number; // Total volume of all bids
     total_asks: number; // Total volume of all asks
+    price: number; // Current market price estimate
 }
 
 interface OrderSnapshotResponse {
     type: "batch";
     orders: OrderbookEntry[] | OrderbookData;
-    timestamp: string;
+    last_trade?: number;
+    timestamp?: string;
+    price?: number;
 }
 
 interface OrderUpdateResponse {
@@ -72,6 +75,8 @@ export class OrderBookConnection extends SocketConnection {
     constructor(config: ConnectionConfig, updateFunctions: uiFunctions, ticker: string) {
         super(config);
 
+
+
         // component functions passed in to update the ui
         this.addOrder = updateFunctions.addOrder;
         this.setOrders = updateFunctions.setOrders;
@@ -111,8 +116,9 @@ export class OrderBookConnection extends SocketConnection {
     public messageHandler(data: OrderUpdateResponse | OrderSnapshotResponse | ErrorResponse | OrderSuccessResponse) {
         switch (data.type) {
             case "batch":
-                console.log("ORDERS", data.orders);
                 this.uiFunctions.setOrders(data.orders);
+
+
                 this.initialDataLoaded = true;
                 break;
             case "update":

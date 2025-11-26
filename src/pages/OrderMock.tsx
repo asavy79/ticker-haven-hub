@@ -37,6 +37,7 @@ export interface OrderbookData {
   asks: [number, number][]; // Array of [price, quantity] tuples
   total_bids: number; // Total volume of all bids
   total_asks: number; // Total volume of all asks
+  price: number; // Current market price estimate
 }
 
 const connectionConfig = {
@@ -91,6 +92,9 @@ const OrderMock = () => {
   const [totalBids, setTotalBids] = useState<number>(0);
   const [totalAsks, setTotalAsks] = useState<number>(0);
   const [maxQuantity, setMaxQuantity] = useState<number>(0);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [priceChange, setPriceChange] = useState<number>(0);
+  const [previousPrice, setPreviousPrice] = useState<number | null>(null);
 
   const { toast } = useToast();
 
@@ -114,6 +118,15 @@ const OrderMock = () => {
     }
   };
 
+  const setPrice = (newPrice: number) => {
+    if (currentPrice !== null) {
+      setPreviousPrice(currentPrice);
+      setPriceChange(newPrice - currentPrice);
+    }
+    console.log("New PRICE:", newPrice);
+    setCurrentPrice(newPrice);
+  };
+
   const setOrders = (snapshot: OrderbookEntry[] | OrderbookData) => {
     console.log("INSIDE SET ORDERS FUNCTION!", snapshot);
     setLastUpdate(new Date());
@@ -129,6 +142,12 @@ const OrderMock = () => {
       // Update total bids and asks
       setTotalBids(orderbookData.total_bids || 0);
       setTotalAsks(orderbookData.total_asks || 0);
+
+      // Extract and update price if available
+      if (orderbookData.price !== null && orderbookData.price !== undefined) {
+        console.log("SETTING PRICE:", orderbookData.price);
+        setPrice(orderbookData.price);
+      }
 
       // Calculate max quantity for visual bars
       const allQuantities = [...orderbookData.bids, ...orderbookData.asks].map(
@@ -175,6 +194,9 @@ const OrderMock = () => {
         setOrders: (orders) => {
           handlersRef.current.setOrders(orders);
         },
+        setPrice: (price) => {
+          setPrice(price);
+        },
         setError: (error) => {
           toast({
             title: "Order Failed",
@@ -182,6 +204,7 @@ const OrderMock = () => {
             variant: "destructive",
             duration: 5000,
           });
+          setConnectionStatus("disconnected");
         },
         setSuccess: (message) => {
           toast({
@@ -374,9 +397,28 @@ const OrderMock = () => {
             connectionStatus={connectionStatus}
           />
           <ConnectionStatusBadge />
-          <Badge variant="outline" className="text-sm">
-            <DollarSign className="h-3 w-3 mr-1" />
-            {selectedTicker}
+          <Badge variant="outline" className="text-lg px-4 py-2">
+            <div className="flex items-center space-x-2">
+              <span>{selectedTicker}</span>
+              {currentPrice !== null ? (
+                <>
+                  <span className={priceChange >= 0 ? "text-success" : "text-sell"}>
+                    {formatPrice(currentPrice)}
+                  </span>
+                  {priceChange !== 0 && (
+                    <>
+                      {priceChange >= 0 ? (
+                        <TrendingUp className="h-4 w-4 text-success" />
+                      ) : (
+                        <TrendingUp className="h-4 w-4 text-sell rotate-180" />
+                      )}
+                    </>
+                  )}
+                </>
+              ) : (
+                <span className="text-muted-foreground">Loading...</span>
+              )}
+            </div>
           </Badge>
           <div className="text-right text-sm text-muted-foreground">
             <div className="flex items-center">
@@ -388,7 +430,49 @@ const OrderMock = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        {/* Live Price Card */}
+        <Card className="border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              {currentPrice !== null ? (
+                <>
+                  {priceChange >= 0 ? (
+                    <TrendingUp className="h-4 w-4 text-success" />
+                  ) : (
+                    <TrendingUp className="h-4 w-4 text-sell rotate-180" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium">Live Price</p>
+                    <p className={`text-2xl font-bold ${
+                      priceChange >= 0 ? "text-success" : "text-sell"
+                    }`}>
+                      {formatPrice(currentPrice)}
+                    </p>
+                    {priceChange !== 0 && (
+                      <p className={`text-xs ${
+                        priceChange >= 0 ? "text-success" : "text-sell"
+                      }`}>
+                        {priceChange >= 0 ? "+" : ""}{formatPrice(priceChange)}
+                      </p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Activity className="h-4 w-4 text-muted-foreground animate-pulse" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Live Price</p>
+                    <p className="text-2xl font-bold text-muted-foreground">
+                      Loading...
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">

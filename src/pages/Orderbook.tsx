@@ -11,74 +11,100 @@ interface OrderbookEntry {
   type: string;
 }
 
+interface OrderbookData {
+  bids: [number, number][];
+  asks: [number, number][];
+  total_bids: number;
+  total_asks: number;
+  price: number;
+}
+
 const Orderbook = () => {
   const [bids, setBids] = useState<OrderbookEntry[]>([]);
   const [asks, setAsks] = useState<OrderbookEntry[]>([]);
-  const [currentPrice, setCurrentPrice] = useState(105.5);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [priceChange, setPriceChange] = useState(0);
+  const [previousPrice, setPreviousPrice] = useState<number | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
-  // Generate mock orderbook data
-  const generateOrderbookData = (basePrice: number) => {
-    const newBids: OrderbookEntry[] = [];
-    const newAsks: OrderbookEntry[] = [];
-
-    // Generate bids (buy orders) - below current price
-    for (let i = 0; i < 10; i++) {
-      const price = basePrice - (i + 1) * 0.25;
-      const quantity = Math.floor(Math.random() * 50) + 5;
-      newBids.push({
+  // Handle real orderbook data from websocket
+  const setOrders = (orders: OrderbookEntry[] | OrderbookData) => {
+    if (Array.isArray(orders)) {
+      // Legacy format - shouldn't happen with new backend
+      setBids(orders.filter(order => order.type === 'bid'));
+      setAsks(orders.filter(order => order.type === 'ask'));
+    } else {
+      // New format from MarketDataSnapshot
+      const newBids: OrderbookEntry[] = orders.bids.map(([price, quantity]) => ({
         price,
         quantity,
         total: price * quantity,
-        type: "",
-      });
-    }
-
-    // Generate asks (sell orders) - above current price
-    for (let i = 0; i < 10; i++) {
-      const price = basePrice + (i + 1) * 0.25;
-      const quantity = Math.floor(Math.random() * 50) + 5;
-      newAsks.push({
+        type: 'bid',
+      }));
+      
+      const newAsks: OrderbookEntry[] = orders.asks.map(([price, quantity]) => ({
         price,
         quantity,
         total: price * quantity,
-        type: "",
-      });
+        type: 'ask',
+      }));
+      
+      setBids(newBids);
+      setAsks(newAsks);
     }
-
-    setBids(newBids);
-    setAsks(newAsks);
   };
 
-  const addOrder = (order: OrderbookEntry) => {};
+  const setPrice = (newPrice: number) => {
+    if (currentPrice !== null) {
+      setPreviousPrice(currentPrice);
+      setPriceChange(newPrice - currentPrice);
+    }
+    console.log("Setting price to:", newPrice);
+    setCurrentPrice(newPrice);
+  };
 
-  // Mock real-time updates
+  const addOrder = (order: OrderbookEntry) => {
+    // Handle individual order updates if needed
+  };
+
+  const setError = (errorMessage: string) => {
+    console.error("Orderbook error:", errorMessage);
+    setIsConnected(false);
+  };
+
+  const setSuccess = (message: string) => {
+    console.log("Orderbook success:", message);
+  };
+
+  // Real-time websocket connection
   useEffect(() => {
     const config = {
-      url: "",
+      url: "ws://localhost:8000", // Matches the API base URL
       params: "",
     };
 
     const bookSub = new OrderBookConnection(
       config,
-      { setOrders: setBids, addOrder: addOrder },
+      { 
+        setOrders, 
+        addOrder, 
+        setError,
+        setSuccess 
+      },
       "QNTX"
     );
 
-    generateOrderbookData(currentPrice);
+    // Open the websocket connection
+    bookSub.openConnection();
+    setIsConnected(true);
 
-    const interval = setInterval(() => {
-      setCurrentPrice((prev) => {
-        const change = (Math.random() - 0.5) * 2;
-        const newPrice = Math.max(90, Math.min(120, prev + change));
-        setPriceChange(newPrice - prev);
-        generateOrderbookData(newPrice);
-        return newPrice;
-      });
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [currentPrice]);
+    // Cleanup on unmount
+    return () => {
+      setIsConnected(false);
+      // Close websocket connection if the class has a close method
+      bookSub.unsubscribe();
+    };
+  }, []); // Remove currentPrice dependency to avoid reconnecting
 
   const maxBidQuantity = Math.max(...bids.map((b) => b.quantity));
   const maxAskQuantity = Math.max(...asks.map((a) => a.quantity));
@@ -90,16 +116,29 @@ const Orderbook = () => {
         <div className="flex items-center space-x-4">
           <Badge variant="outline" className="text-lg px-4 py-2">
             <div className="flex items-center space-x-2">
-              <span>MOCK-FUTURE</span>
-              <span className={priceChange >= 0 ? "text-success" : "text-sell"}>
-                ${currentPrice.toFixed(2)}
-              </span>
-              {priceChange >= 0 ? (
-                <TrendingUp className="h-4 w-4 text-success" />
+              <span>QNTX</span>
+              {currentPrice !== null ? (
+                <>
+                  <span className={priceChange >= 0 ? "text-success" : "text-sell"}>
+                    ${currentPrice.toFixed(2)}
+                  </span>
+                  {priceChange !== 0 && (
+                    <>
+                      {priceChange >= 0 ? (
+                        <TrendingUp className="h-4 w-4 text-success" />
+                      ) : (
+                        <TrendingDown className="h-4 w-4 text-sell" />
+                      )}
+                    </>
+                  )}
+                </>
               ) : (
-                <TrendingDown className="h-4 w-4 text-sell" />
+                <span className="text-muted-foreground">Loading...</span>
               )}
             </div>
+          </Badge>
+          <Badge variant={isConnected ? "default" : "destructive"}>
+            {isConnected ? "Connected" : "Disconnected"}
           </Badge>
         </div>
       </div>
@@ -179,17 +218,29 @@ const Orderbook = () => {
             <div className="text-sm text-muted-foreground mb-2">
               Current Market Price
             </div>
-            <div
-              className={`text-4xl font-bold ${
-                priceChange >= 0 ? "text-success" : "text-sell"
-              }`}
-            >
-              ${currentPrice.toFixed(2)}
-            </div>
-            <div className="text-sm text-muted-foreground mt-2">
-              {priceChange >= 0 ? "+" : ""}${priceChange.toFixed(2)} (
-              {((priceChange / (currentPrice - priceChange)) * 100).toFixed(2)}
-              %)
+            {currentPrice !== null ? (
+              <>
+                <div
+                  className={`text-4xl font-bold ${
+                    priceChange >= 0 ? "text-success" : "text-sell"
+                  }`}
+                >
+                  ${currentPrice.toFixed(2)}
+                </div>
+                {priceChange !== 0 && previousPrice !== null && (
+                  <div className="text-sm text-muted-foreground mt-2">
+                    {priceChange >= 0 ? "+" : ""}${priceChange.toFixed(2)} (
+                    {((priceChange / previousPrice) * 100).toFixed(2)}%)
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-4xl font-bold text-muted-foreground">
+                Loading...
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground mt-2">
+              {isConnected ? "Live Price" : "Disconnected"}
             </div>
           </div>
         </CardContent>

@@ -30,10 +30,11 @@ axiosInstance.interceptors.request.use(
       const user = auth.currentUser;
   
       if (user) {
-        const token = await user.getIdToken(); // get *real* token
+        const token = await user.getIdToken();
+
         config.headers = {
           ...config.headers,
-          Authorization: `Bearer ${token}`, // correct place & format
+          Authorization: `Bearer ${token}`,
         };
       }
   

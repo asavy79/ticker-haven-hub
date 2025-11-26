@@ -41,6 +41,7 @@ import {
   PositionDTO,
   AccountRole,
 } from "@/types/admin";
+import { useAuth } from "@/hooks/use-auth";
 
 const MemberDetail = () => {
   const { accountId } = useParams<{ accountId: string }>();
@@ -59,6 +60,7 @@ const MemberDetail = () => {
   const [trades, setTrades] = useState<TradeDTO[]>([]);
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [positions, setPositions] = useState<PositionDTO[]>([]);
+  const { user, isLoading } = useAuth();
 
   const fetchMemberData = async () => {
     if (!accountId) {
@@ -84,10 +86,10 @@ const MemberDetail = () => {
           AdminService.getAccountPositions(accountIdNum, { page_size: 50 }),
         ]);
 
-        console.log(memberData);
-        console.log(tradesData);
-        console.log(ordersData);
-        console.log(positionsData);
+      console.log(memberData);
+      console.log(tradesData);
+      console.log(ordersData);
+      console.log(positionsData);
 
       setMember(memberData);
       setTrades(tradesData.trades);
@@ -106,8 +108,10 @@ const MemberDetail = () => {
   };
 
   useEffect(() => {
-    fetchMemberData();
-  }, [accountId]);
+    if (user) {
+      fetchMemberData();
+    }
+  }, [accountId, user]);
 
   const handleEditBalance = async () => {
     if (!newBalance || !member || !accountId) return;
@@ -183,9 +187,12 @@ const MemberDetail = () => {
 
   const getRoleBadge = (role: AccountRole | string) => {
     // Handle both enum values and string values from backend
-    const normalizedRole = typeof role === 'string' ? role.toLowerCase() : role;
-    
-    const roleConfig: Record<string, { variant: "default" | "secondary" | "outline"; className: string }> = {
+    const normalizedRole = typeof role === "string" ? role.toLowerCase() : role;
+
+    const roleConfig: Record<
+      string,
+      { variant: "default" | "secondary" | "outline"; className: string }
+    > = {
       [AccountRole.PRESIDENT]: {
         variant: "default",
         className: "bg-primary text-primary-foreground",
@@ -215,21 +222,26 @@ const MemberDetail = () => {
     };
 
     const config = roleConfig[normalizedRole] || roleConfig[AccountRole.USER];
-    
+
     // Display name mapping
     const displayNames: Record<string, string> = {
-      'user': 'User',
-      'admin': 'Admin',
-      'moderator': 'Moderator',
-      'owner': 'Owner',
-      'MEMBER': 'Member',
-      'TREASURER': 'Treasurer',
-      'VICE_PRESIDENT': 'Vice President',
-      'PRESIDENT': 'President'
+      user: "User",
+      admin: "Admin",
+      moderator: "Moderator",
+      owner: "Owner",
+      MEMBER: "Member",
+      TREASURER: "Treasurer",
+      VICE_PRESIDENT: "Vice President",
+      PRESIDENT: "President",
     };
-    
-    const displayName = displayNames[normalizedRole] || 
-                       role.toString().toLowerCase().replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+    const displayName =
+      displayNames[normalizedRole] ||
+      role
+        .toString()
+        .toLowerCase()
+        .replace("_", " ")
+        .replace(/\b\w/g, (l) => l.toUpperCase());
 
     return (
       <Badge variant={config.variant} className={config.className}>
@@ -246,7 +258,8 @@ const MemberDetail = () => {
 
   const calculateTotalPnL = () => {
     return positions.reduce(
-      (sum, position) => sum + (position.realized_pnl || 0) + (position.unrealized_pnl || 0),
+      (sum, position) =>
+        sum + (position.realized_pnl || 0) + (position.unrealized_pnl || 0),
       0
     );
   };
@@ -456,7 +469,9 @@ const MemberDetail = () => {
                         id="balance"
                         type="number"
                         step="0.01"
-                        placeholder={`Current: ${(member.balance || 0).toFixed(2)}`}
+                        placeholder={`Current: ${(member.balance || 0).toFixed(
+                          2
+                        )}`}
                         value={newBalance}
                         onChange={(e) => setNewBalance(e.target.value)}
                         disabled={updating}
@@ -473,10 +488,7 @@ const MemberDetail = () => {
                 </DialogContent>
               </Dialog>
 
-              <Dialog
-                open={isEditRoleOpen}
-                onOpenChange={setIsEditRoleOpen}
-              >
+              <Dialog open={isEditRoleOpen} onOpenChange={setIsEditRoleOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full">
                     <Edit className="h-4 w-4 mr-2" />
@@ -496,7 +508,9 @@ const MemberDetail = () => {
                         disabled={updatingRole}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={`Current: ${member.role}`} />
+                          <SelectValue
+                            placeholder={`Current: ${member.role}`}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="user">User</SelectItem>
