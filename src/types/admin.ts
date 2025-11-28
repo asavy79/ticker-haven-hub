@@ -56,8 +56,11 @@ export interface TradeDTO {
     symbol: string;
     quantity: number;
     price: number;
-    value: number;
+    trade_value: number;
     created_at: string;
+    buy_account_id: number;
+    sell_account_id: number;
+
 }
 
 export interface PositionDTO {

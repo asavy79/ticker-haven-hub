@@ -53,16 +53,24 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
       auth,
       async (firebaseUser: FirebaseUser | null) => {
         let userRole = null;
+        let dbId = null;
 
         if (firebaseUser) {
           const idTokenResult = await firebaseUser.getIdTokenResult();
           userRole = idTokenResult.claims.role;
+          dbId = idTokenResult.claims.db_id;
         }
 
         setAuthState((prev) => ({
           ...prev,
           firebaseUser,
-          user: firebaseUser ? firebaseUserToAppUser(firebaseUser) : null,
+          user: firebaseUser
+            ? {
+                ...firebaseUserToAppUser(firebaseUser),
+                role: userRole,
+                dbId: dbId,
+              }
+            : null,
           isLoading: false,
         }));
 
@@ -71,7 +79,8 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
         }
         // const userRole = "ADMIN";
         // later add real check when in production
-        const isAdmin = userRole == "ADMIN" || userRole == "OWNER";
+        const isAdmin =
+          userRole.toUpperCase() == "ADMIN" || userRole == "OWNER";
 
         if (!isAdmin && window.location.pathname.includes("/admin")) {
           navigate("/orderbook");

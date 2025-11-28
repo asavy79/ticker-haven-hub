@@ -1,120 +1,247 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  User,
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-
-interface Position {
-  id: string;
-  symbol: string;
-  quantity: number;
-  entryPrice: number;
-  currentPrice: number;
-  pnl: number;
-  type: "long" | "short";
-}
+import { AdminService } from "@/services/admin";
+import {
+  AccountDTO,
+  TradeDTO,
+  OrderDTO,
+  PositionDTO,
+  AccountRole,
+} from "@/types/admin";
+import { useFirebaseAuth } from "@/contexts/firebase-auth-context";
 
 const Portfolio = () => {
-  const [positions, setPositions] = useState<Position[]>([
-    {
-      id: "1",
-      symbol: "MOCK-FUTURE",
-      quantity: 10,
-      entryPrice: 100,
-      currentPrice: 105.5,
-      pnl: 55,
-      type: "long",
-    },
-    {
-      id: "2",
-      symbol: "MOCK-FUTURE",
-      quantity: -5,
-      entryPrice: 98,
-      currentPrice: 105.5,
-      pnl: -37.5,
-      type: "short",
-    },
-  ]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [currentPrice, setCurrentPrice] = useState(105.5);
-  const [tradeForm, setTradeForm] = useState({
-    type: "",
-    quantity: "",
-    price: "",
-  });
+  // State for user data
+  const [member, setMember] = useState<AccountDTO | null>(null);
+  const [trades, setTrades] = useState<TradeDTO[]>([]);
+  const [orders, setOrders] = useState<OrderDTO[]>([]);
+  const [positions, setPositions] = useState<PositionDTO[]>([]);
+  
+  const { user, isLoading: authLoading } = useFirebaseAuth();
 
-  // Mock real-time price updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentPrice((prev) => {
-        const change = (Math.random() - 0.5) * 2; // Random price movement
-        const newPrice = Math.max(90, Math.min(120, prev + change));
-
-        // Update positions with new price
-        setPositions((prevPositions) =>
-          prevPositions.map((pos) => ({
-            ...pos,
-            currentPrice: newPrice,
-            pnl:
-              pos.type === "long"
-                ? (newPrice - pos.entryPrice) * pos.quantity
-                : (pos.entryPrice - newPrice) * Math.abs(pos.quantity),
-          }))
-        );
-
-        return newPrice;
-      });
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const totalPnL = positions.reduce((sum, pos) => sum + pos.pnl, 0);
-  const accountBalance = 10000; // Mock balance
-
-  const handleTrade = () => {
-    if (!tradeForm.type || !tradeForm.quantity || !tradeForm.price) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
+  const fetchPortfolioData = async () => {
+    if (!user?.dbId) {
+      setError("User not authenticated or missing database ID");
+      setLoading(false);
       return;
     }
 
-    toast({
-      title: "Trade Placed",
-      description: `${tradeForm.type.toUpperCase()} ${
-        tradeForm.quantity
-      } units at $${tradeForm.price}`,
-    });
+    try {
+      setLoading(true);
+      setError(null);
 
-    setTradeForm({ type: "", quantity: "", price: "" });
+      const accountId = user.dbId;
+
+      const [memberData, tradesData, ordersData, positionsData] =
+        await Promise.all([
+          AdminService.getAccount(accountId),
+          AdminService.getAccountTrades(accountId, { page_size: 50 }),
+          AdminService.getAccountOrders(accountId, { page_size: 50 }),
+          AdminService.getAccountPositions(accountId, { page_size: 50 }),
+        ]);
+
+      console.log("Portfolio data:", { memberData, tradesData, ordersData, positionsData });
+
+      setMember(memberData);
+      setTrades(tradesData.trades);
+      setOrders(ordersData.orders);
+      setPositions(positionsData.positions);
+    } catch (err: any) {
+      console.error("Error fetching portfolio data:", err);
+      if (err.response?.status === 404) {
+        setError("Account not found");
+      } else {
+        setError("Failed to load portfolio data. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    if (user && !authLoading) {
+      fetchPortfolioData();
+    }
+  }, [user, authLoading]);
+
+  const getRoleBadge = (role: AccountRole | string) => {
+    // Handle both enum values and string values from backend
+    const normalizedRole = typeof role === "string" ? role.toLowerCase() : role;
+
+    const roleConfig: Record<
+      string,
+      { variant: "default" | "secondary" | "outline"; className: string }
+    > = {
+      [AccountRole.PRESIDENT]: {
+        variant: "default",
+        className: "bg-primary text-primary-foreground",
+      },
+      [AccountRole.VICE_PRESIDENT]: {
+        variant: "secondary",
+        className: "bg-secondary text-secondary-foreground",
+      },
+      [AccountRole.TREASURER]: {
+        variant: "secondary",
+        className: "bg-secondary text-secondary-foreground",
+      },
+      [AccountRole.ADMIN]: {
+        variant: "outline",
+        className: "border-primary text-primary",
+      },
+      [AccountRole.MODERATOR]: {
+        variant: "outline",
+        className: "border-orange-500 text-orange-600",
+      },
+      [AccountRole.OWNER]: {
+        variant: "default",
+        className: "bg-red-600 text-white",
+      },
+      [AccountRole.MEMBER]: { variant: "outline", className: "" },
+      [AccountRole.USER]: { variant: "outline", className: "" },
+    };
+
+    const config = roleConfig[normalizedRole] || roleConfig[AccountRole.USER];
+
+    // Display name mapping
+    const displayNames: Record<string, string> = {
+      user: "User",
+      admin: "Admin",
+      moderator: "Moderator",
+      owner: "Owner",
+      MEMBER: "Member",
+      TREASURER: "Treasurer",
+      VICE_PRESIDENT: "Vice President",
+      PRESIDENT: "President",
+    };
+
+    const displayName =
+      displayNames[normalizedRole] ||
+      role
+        .toString()
+        .toLowerCase()
+        .replace("_", " ")
+        .replace(/\b\w/g, (l) => l.toUpperCase());
+
+    return (
+      <Badge variant={config.variant} className={config.className}>
+        {displayName}
+      </Badge>
+    );
+  };
+
+  const isActive = (lastLogin: string | null) => {
+    if (!lastLogin) return false;
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    return new Date(lastLogin) > thirtyDaysAgo;
+  };
+
+  const calculateTotalPnL = () => {
+    return positions.reduce(
+      (sum, position) =>
+        sum + (position.realized_pnl || 0) + (position.unrealized_pnl || 0),
+      0
+    );
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-8 w-32" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !member) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Portfolio</h1>
+        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+            <Button
+              variant="link"
+              className="p-0 h-auto ml-2"
+              onClick={fetchPortfolioData}
+            >
+              Try again
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Portfolio</h1>
         <div className="flex items-center space-x-4">
-          <Badge variant="outline" className="text-lg px-4 py-2">
-            MOCK-FUTURE: ${currentPrice.toFixed(2)}
-          </Badge>
+          <h1 className="text-3xl font-bold">My Portfolio</h1>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchPortfolioData}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          {getRoleBadge(member.role)}
+          {isActive(member.last_login_at) ? (
+            <Badge
+              variant="outline"
+              className="border-green-500 text-green-600"
+            >
+              Active
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="border-muted text-muted-foreground"
+            >
+              Inactive
+            </Badge>
+          )}
         </div>
       </div>
 
       {/* Account Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -124,145 +251,259 @@ const Portfolio = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${accountBalance.toLocaleString()}
+              {(member.balance || 0).toFixed(2)}
             </div>
+            <p className="text-xs text-muted-foreground">Available credits</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total P&L</CardTitle>
-            {totalPnL >= 0 ? (
-              <TrendingUp className="h-4 w-4 text-success" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-sell" />
-            )}
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div
               className={`text-2xl font-bold ${
-                totalPnL >= 0 ? "text-success" : "text-sell"
+                calculateTotalPnL() >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
-              ${totalPnL.toFixed(2)}
+              ${calculateTotalPnL().toFixed(2)}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Realized + Unrealized
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Open Positions
+              Active Positions
             </CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{positions.length}</div>
+            <p className="text-xs text-muted-foreground">Open positions</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Trades</CardTitle>
+            <User className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{trades.length}</div>
+            <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Positions */}
+      {/* Account Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Open Positions</CardTitle>
+          <CardTitle>Account Information</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {positions.map((position) => (
-              <div
-                key={position.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
-              >
-                <div className="flex items-center space-x-4">
-                  <Badge
-                    variant={position.type === "long" ? "default" : "secondary"}
-                  >
-                    {position.type.toUpperCase()}
-                  </Badge>
-                  <div>
-                    <div className="font-semibold">{position.symbol}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Qty: {position.quantity} | Entry: ${position.entryPrice}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-semibold">
-                    ${position.currentPrice.toFixed(2)}
-                  </div>
-                  <div
-                    className={`text-sm font-medium ${
-                      position.pnl >= 0 ? "text-success" : "text-sell"
-                    }`}
-                  >
-                    {position.pnl >= 0 ? "+" : ""}${position.pnl.toFixed(2)}
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span>Account ID: {member.id}</span>
               </div>
-            ))}
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span>Username: {member.username}</span>
+              </div>
+              {member.last_login_at && (
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span>
+                    Last Login:{" "}
+                    {new Date(member.last_login_at).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <span>Total Orders: {orders.length}</span>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Trade Configuration */}
+      {/* Active Positions */}
       <Card>
         <CardHeader>
-          <CardTitle>Place Trade</CardTitle>
+          <CardTitle>Active Positions ({positions.length} total)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="trade-type">Type</Label>
-              <Select
-                value={tradeForm.type}
-                onValueChange={(value) =>
-                  setTradeForm((prev) => ({ ...prev, type: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Buy/Sell" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="buy">Buy (Long)</SelectItem>
-                  <SelectItem value="sell">Sell (Short)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-4">
+            {positions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No active positions</p>
+                <p className="text-sm">Start trading to see your positions here</p>
+              </div>
+            ) : (
+              positions.map((position) => (
+                <div
+                  key={position.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div className="flex items-center space-x-4">
+                    <Badge variant="outline">Position</Badge>
+                    <div>
+                      <div className="font-medium">{position.symbol}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Avg Price: ${(position.average_price || 0).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">Qty: {position.quantity}</div>
+                    <div className="flex space-x-2 text-sm">
+                      <span
+                        className={`${
+                          (position.realized_pnl || 0) >= 0
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        Realized: ${(position.realized_pnl || 0).toFixed(2)}
+                      </span>
+                      <span
+                        className={`${
+                          (position.unrealized_pnl || 0) >= 0
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        Unrealized: ${(position.unrealized_pnl || 0).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                placeholder="0"
-                value={tradeForm.quantity}
-                onChange={(e) =>
-                  setTradeForm((prev) => ({
-                    ...prev,
-                    quantity: e.target.value,
-                  }))
-                }
-              />
-            </div>
+      {/* Recent Trade History */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Trade History ({trades.length} total)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {trades.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No trades yet</p>
+                <p className="text-sm">Your trading history will appear here</p>
+              </div>
+            ) : (
+              trades.slice(0, 10).map((trade) => (
+                <div
+                  key={trade.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div className="flex items-center space-x-4">
+                    <Badge variant="default">Trade</Badge>
+                    <div>
+                      <div className="font-medium">{trade.symbol}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(trade.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">
+                      {trade.quantity} @ ${(trade.price || 0).toFixed(2)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Value: ${(trade.value || 0).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+            {trades.length > 10 && (
+              <div className="text-center text-sm text-muted-foreground">
+                Showing 10 of {trades.length} trades
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="price">Price</Label>
-              <Input
-                id="price"
-                type="number"
-                placeholder="0.00"
-                value={tradeForm.price}
-                onChange={(e) =>
-                  setTradeForm((prev) => ({ ...prev, price: e.target.value }))
-                }
-              />
-            </div>
-
-            <div className="flex items-end">
-              <Button onClick={handleTrade} className="w-full">
-                Place Trade
-              </Button>
-            </div>
+      {/* Recent Orders */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Orders ({orders.length} total)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {orders.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No orders yet</p>
+                <p className="text-sm">Place your first order to get started</p>
+              </div>
+            ) : (
+              orders.slice(0, 10).map((order) => (
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div className="flex items-center space-x-4">
+                    <Badge
+                      variant={order.side === "BUY" ? "default" : "secondary"}
+                    >
+                      {order.side}
+                    </Badge>
+                    <div>
+                      <div className="font-medium">{order.symbol}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(order.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">
+                      {order.quantity} @ ${(order.price || 0).toFixed(2)}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge
+                        variant={
+                          order.status === "FILLED"
+                            ? "default"
+                            : order.status === "CANCELLED"
+                            ? "destructive"
+                            : "outline"
+                        }
+                      >
+                        {order.status}
+                      </Badge>
+                      {order.remaining_quantity > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {order.remaining_quantity} remaining
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+            {orders.length > 10 && (
+              <div className="text-center text-sm text-muted-foreground">
+                Showing 10 of {orders.length} orders
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

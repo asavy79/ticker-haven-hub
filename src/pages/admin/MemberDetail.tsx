@@ -559,6 +559,13 @@ const MemberDetail = () => {
                       <div className="text-sm text-muted-foreground">
                         {new Date(trade.created_at).toLocaleDateString()}
                       </div>
+                      <div>
+                        {trade.buy_account_id == accountId ? (
+                          <p className="text-green-500">Buy</p>
+                        ) : (
+                          <p className="text-red-500">Sell</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="text-right">
@@ -566,7 +573,7 @@ const MemberDetail = () => {
                       {trade.quantity} @ ${(trade.price || 0).toFixed(2)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Value: ${(trade.value || 0).toFixed(2)}
+                      Value: ${(trade.trade_value || 0).toFixed(2)}
                     </div>
                   </div>
                 </div>
