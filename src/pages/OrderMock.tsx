@@ -194,9 +194,6 @@ const OrderMock = () => {
         setOrders: (orders) => {
           handlersRef.current.setOrders(orders);
         },
-        setPrice: (price) => {
-          setPrice(price);
-        },
         setError: (error) => {
           toast({
             title: "Order Failed",
@@ -204,7 +201,6 @@ const OrderMock = () => {
             variant: "destructive",
             duration: 5000,
           });
-          setConnectionStatus("disconnected");
         },
         setSuccess: (message) => {
           toast({
@@ -249,7 +245,8 @@ const OrderMock = () => {
 
   const handlePlaceOrder = async (order: {
     type: "Buy" | "Sell";
-    price: number;
+    orderType: "MARKET" | "LIMIT";
+    price: number | null;
     quantity: number;
   }) => {
     if (!subRef.current) {

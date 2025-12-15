@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -21,12 +22,15 @@ import {
   AlertCircle,
   CheckCircle2,
   Activity,
+  Zap,
+  Target,
 } from "lucide-react";
 
 interface OrderFormProps {
   onPlaceOrder: (order: {
     type: "Buy" | "Sell";
-    price: number;
+    orderType: "MARKET" | "LIMIT";
+    price: number | null;
     quantity: number;
   }) => Promise<void>;
   connectionStatus: "connecting" | "connected" | "disconnected";
@@ -38,6 +42,7 @@ export const OrderForm = ({
 }: OrderFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [orderType, setOrderType] = useState<"Buy" | "Sell">("Buy");
+  const [priceType, setPriceType] = useState<"MARKET" | "LIMIT">("LIMIT");
   const [orderPrice, setOrderPrice] = useState("");
   const [orderQuantity, setOrderQuantity] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,7 +60,8 @@ export const OrderForm = ({
     const price = parseFloat(orderPrice);
     const quantity = parseInt(orderQuantity);
 
-    if (!orderPrice || isNaN(price) || price <= 0) {
+    // Only validate price for limit orders
+    if (priceType === "LIMIT" && (!orderPrice || isNaN(price) || price <= 0)) {
       newErrors.price = "Please enter a valid price greater than 0";
     }
 
@@ -78,10 +84,15 @@ export const OrderForm = ({
     setErrors({});
 
     try {
-      const price = parseFloat(orderPrice);
+      const price = priceType === "LIMIT" ? parseFloat(orderPrice) : null;
       const quantity = parseInt(orderQuantity);
 
-      await onPlaceOrder({ type: orderType, price, quantity });
+      await onPlaceOrder({ 
+        type: orderType, 
+        orderType: priceType,
+        price, 
+        quantity 
+      });
       setOrderPrice("");
       setOrderQuantity("");
       setIsOpen(false);
@@ -118,6 +129,7 @@ export const OrderForm = ({
   };
 
   const calculateTotal = () => {
+    if (priceType === "MARKET") return 0; // Can't calculate total for market orders
     const price = parseFloat(orderPrice);
     const quantity = parseInt(orderQuantity);
     if (isNaN(price) || isNaN(quantity)) return 0;
@@ -130,6 +142,7 @@ export const OrderForm = ({
       // Reset form when closing
       setOrderPrice("");
       setOrderQuantity("");
+      setPriceType("LIMIT");
       setErrors({});
     }
   };
@@ -153,12 +166,15 @@ export const OrderForm = ({
             <DollarSign className="h-5 w-5" />
             <span>Place New Order - QNTX</span>
           </DialogTitle>
+          <DialogDescription>
+      Submit a market or limit order to buy or sell shares
+      </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Order Type Toggle */}
+          {/* Buy/Sell Toggle */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Order Type</Label>
+            <Label className="text-sm font-medium">Order Side</Label>
             <div className="flex space-x-2">
               <Button
                 type="button"
@@ -189,31 +205,72 @@ export const OrderForm = ({
             </div>
           </div>
 
-          {/* Price Input */}
+          {/* Order Type Toggle (Market/Limit) */}
           <div className="space-y-2">
-            <Label htmlFor="price" className="text-sm font-medium">
-              Price per Share
-            </Label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={orderPrice}
-                onChange={(e) => setOrderPrice(e.target.value)}
-                className={`pl-10 ${errors.price ? "border-destructive" : ""}`}
-              />
+            <Label className="text-sm font-medium">Order Type</Label>
+            <div className="flex space-x-2">
+              <Button
+                type="button"
+                variant={priceType === "MARKET" ? "default" : "outline"}
+                onClick={() => setPriceType("MARKET")}
+                className={`flex-1 ${
+                  priceType === "MARKET"
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "border-blue-200 text-blue-600 hover:bg-blue-50"
+                }`}
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Market
+              </Button>
+              <Button
+                type="button"
+                variant={priceType === "LIMIT" ? "default" : "outline"}
+                onClick={() => setPriceType("LIMIT")}
+                className={`flex-1 ${
+                  priceType === "LIMIT"
+                    ? "bg-purple-600 hover:bg-purple-700 text-white"
+                    : "border-purple-200 text-purple-600 hover:bg-purple-50"
+                }`}
+              >
+                <Target className="h-4 w-4 mr-2" />
+                Limit
+              </Button>
             </div>
-            {errors.price && (
-              <p className="text-sm text-destructive flex items-center">
-                <AlertCircle className="h-3 w-3 mr-1" />
-                {errors.price}
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              {priceType === "MARKET" 
+                ? "Execute immediately at best available price" 
+                : "Execute only at your specified price or better"
+              }
+            </p>
           </div>
+
+          {/* Price Input - Only for Limit Orders */}
+          {priceType === "LIMIT" && (
+            <div className="space-y-2">
+              <Label htmlFor="price" className="text-sm font-medium">
+                Limit Price per Share
+              </Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={orderPrice}
+                  onChange={(e) => setOrderPrice(e.target.value)}
+                  className={`pl-10 ${errors.price ? "border-destructive" : ""}`}
+                />
+              </div>
+              {errors.price && (
+                <p className="text-sm text-destructive flex items-center">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  {errors.price}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Quantity Input */}
           <div className="space-y-2">
@@ -238,12 +295,12 @@ export const OrderForm = ({
           </div>
 
           {/* Order Summary */}
-          {orderTotal > 0 && (
+          {(orderTotal > 0 || (priceType === "MARKET" && orderQuantity)) && (
             <Card className="bg-muted/30">
               <CardContent className="p-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Order Type:</span>
+                    <span>Order Side:</span>
                     <span
                       className={`font-medium ${
                         orderType === "Buy" ? "text-green-600" : "text-red-600"
@@ -253,22 +310,40 @@ export const OrderForm = ({
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Price per Share:</span>
-                    <span>{formatPrice(parseFloat(orderPrice))}</span>
+                    <span>Order Type:</span>
+                    <span className={`font-medium ${
+                      priceType === "MARKET" ? "text-blue-600" : "text-purple-600"
+                    }`}>
+                      {priceType === "MARKET" ? "Market Order" : "Limit Order"}
+                    </span>
                   </div>
+                  {priceType === "LIMIT" && (
+                    <div className="flex justify-between text-sm">
+                      <span>Limit Price:</span>
+                      <span>{formatPrice(parseFloat(orderPrice))}</span>
+                    </div>
+                  )}
+                  {priceType === "MARKET" && (
+                    <div className="flex justify-between text-sm">
+                      <span>Execution:</span>
+                      <span className="text-blue-600 font-medium">At Market Price</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span>Quantity:</span>
                     <span>{formatQuantity(parseInt(orderQuantity))}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-medium">
-                    <span>Total Value:</span>
+                    <span>
+                      {priceType === "MARKET" ? "Estimated Value:" : "Total Value:"}
+                    </span>
                     <span
                       className={
                         orderType === "Buy" ? "text-green-600" : "text-red-600"
                       }
                     >
-                      {formatTotal(orderTotal)}
+                      {priceType === "MARKET" ? "Market Price" : formatTotal(orderTotal)}
                     </span>
                   </div>
                 </div>
@@ -312,8 +387,12 @@ export const OrderForm = ({
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Place {orderType} Order
+                  {priceType === "MARKET" ? (
+                    <Zap className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Target className="h-4 w-4 mr-2" />
+                  )}
+                  Place {priceType === "MARKET" ? "Market" : "Limit"} {orderType}
                 </>
               )}
             </Button>

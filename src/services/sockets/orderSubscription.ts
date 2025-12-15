@@ -118,7 +118,6 @@ export class OrderBookConnection extends SocketConnection {
             case "batch":
                 this.uiFunctions.setOrders(data.orders);
 
-
                 this.initialDataLoaded = true;
                 break;
             case "update":
