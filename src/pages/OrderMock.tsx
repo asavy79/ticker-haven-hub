@@ -78,7 +78,7 @@ const transformOrderbookData = (data: OrderbookData): OrderbookEntry[] => {
 };
 
 // Available tickers for selection
-const AVAILABLE_TICKERS = ["QNTX"];
+const AVAILABLE_TICKERS = ["QNTX", "NVDA"];
 
 const OrderMock = () => {
   const [buyOrders, setBuyOrders] = useState<OrderbookEntry[]>([]);
@@ -399,7 +399,9 @@ const OrderMock = () => {
               <span>{selectedTicker}</span>
               {currentPrice !== null ? (
                 <>
-                  <span className={priceChange >= 0 ? "text-success" : "text-sell"}>
+                  <span
+                    className={priceChange >= 0 ? "text-success" : "text-sell"}
+                  >
                     {formatPrice(currentPrice)}
                   </span>
                   {priceChange !== 0 && (
@@ -441,16 +443,21 @@ const OrderMock = () => {
                   )}
                   <div>
                     <p className="text-sm font-medium">Live Price</p>
-                    <p className={`text-2xl font-bold ${
-                      priceChange >= 0 ? "text-success" : "text-sell"
-                    }`}>
+                    <p
+                      className={`text-2xl font-bold ${
+                        priceChange >= 0 ? "text-success" : "text-sell"
+                      }`}
+                    >
                       {formatPrice(currentPrice)}
                     </p>
                     {priceChange !== 0 && (
-                      <p className={`text-xs ${
-                        priceChange >= 0 ? "text-success" : "text-sell"
-                      }`}>
-                        {priceChange >= 0 ? "+" : ""}{formatPrice(priceChange)}
+                      <p
+                        className={`text-xs ${
+                          priceChange >= 0 ? "text-success" : "text-sell"
+                        }`}
+                      >
+                        {priceChange >= 0 ? "+" : ""}
+                        {formatPrice(priceChange)}
                       </p>
                     )}
                   </div>
@@ -459,7 +466,9 @@ const OrderMock = () => {
                 <>
                   <Activity className="h-4 w-4 text-muted-foreground animate-pulse" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Live Price</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Live Price
+                    </p>
                     <p className="text-2xl font-bold text-muted-foreground">
                       Loading...
                     </p>
