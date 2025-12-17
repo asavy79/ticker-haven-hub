@@ -11,6 +11,7 @@ import {
   TrendingUp,
   AlertCircle,
   RefreshCw,
+  X,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { AdminService } from "@/services/admin";
@@ -20,12 +21,14 @@ import {
   OrderDTO,
   PositionDTO,
   AccountRole,
+  OrderStatus,
 } from "@/types/admin";
 import { useFirebaseAuth } from "@/contexts/firebase-auth-context";
 
 const Portfolio = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
 
   // State for user data
   const [member, setMember] = useState<AccountDTO | null>(null);
@@ -34,6 +37,52 @@ const Portfolio = () => {
   const [positions, setPositions] = useState<PositionDTO[]>([]);
   
   const { user, isLoading: authLoading } = useFirebaseAuth();
+
+  // Check if an order can be cancelled
+  const isOrderCancellable = (status: string): boolean => {
+    const normalizedStatus = status.toUpperCase();
+    return normalizedStatus === OrderStatus.PENDING || normalizedStatus === OrderStatus.PARTIAL;
+  };
+
+  // Handle order cancellation
+  const handleCancelOrder = async (orderId: string) => {
+    setCancellingOrderId(orderId);
+    
+    try {
+      const response = await AdminService.cancelOrder(orderId);
+      
+      if (response.success) {
+        toast({
+          title: "Order Cancelled",
+          description: response.message,
+        });
+        
+        // Update the order in the local state (use CANCELED - backend spelling)
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId
+              ? { ...order, status: OrderStatus.CANCELED }
+              : order
+          )
+        );
+      }
+    } catch (err: any) {
+      console.error("Error cancelling order:", err);
+      
+      const errorMessage =
+        err.response?.data?.detail?.error_message ||
+        err.response?.data?.detail ||
+        "Failed to cancel order. Please try again.";
+      
+      toast({
+        title: "Cancel Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
 
   const fetchPortfolioData = async () => {
     if (!user?.dbId) {
@@ -473,28 +522,47 @@ const Portfolio = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-medium">
-                      {order.quantity} @ ${(order.price || 0).toFixed(2)}
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <div className="font-medium">
+                        {order.quantity} @ ${(order.price || 0).toFixed(2)}
+                      </div>
+                      <div className="flex items-center justify-end space-x-2">
+                        <Badge
+                          variant={
+                            order.status.toUpperCase() === "FILLED"
+                              ? "default"
+                              : order.status.toUpperCase() === "CANCELLED" || order.status.toUpperCase() === "CANCELED"
+                              ? "destructive"
+                              : "outline"
+                          }
+                        >
+                          {order.status}
+                        </Badge>
+                        {order.remaining_quantity > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            {order.remaining_quantity} remaining
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge
-                        variant={
-                          order.status === "FILLED"
-                            ? "default"
-                            : order.status === "CANCELLED"
-                            ? "destructive"
-                            : "outline"
-                        }
+                    {isOrderCancellable(order.status) && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleCancelOrder(order.id)}
+                        disabled={cancellingOrderId === order.id}
                       >
-                        {order.status}
-                      </Badge>
-                      {order.remaining_quantity > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                          {order.remaining_quantity} remaining
-                        </span>
-                      )}
-                    </div>
+                        {cancellingOrderId === order.id ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <X className="h-4 w-4 mr-1" />
+                            Cancel
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))

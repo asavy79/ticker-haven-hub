@@ -13,9 +13,11 @@ export enum AccountRole {
 
 export enum OrderStatus {
     PENDING = "PENDING",
+    PARTIAL = "PARTIAL",
     FILLED = "FILLED",
     CANCELLED = "CANCELLED",
-    PARTIALLY_FILLED = "PARTIALLY_FILLED"
+    CANCELED = "CANCELED", // Backend uses 'canceled' spelling
+    REJECTED = "REJECTED"
 }
 
 export enum OrderSide {
@@ -112,4 +114,20 @@ export interface AdminFilters {
     symbol?: string;
     after?: string;
     before?: string;
+}
+
+// Cancel order response
+export interface CancelOrderResponse {
+    success: boolean;
+    message: string;
+    order_id: string;
+    ticker: string;
+    status: OrderStatus;
+}
+
+export interface CancelOrderError {
+    success: boolean;
+    error_code: string;
+    error_message: string;
+    order_id: string;
 }

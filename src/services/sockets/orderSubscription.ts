@@ -43,6 +43,13 @@ interface OrderSuccessResponse {
     message: string;
 }
 
+interface OrderCancelSuccessResponse {
+    type: "order_cancel_success";
+    message: string;
+    order_id: string;
+    ticker: string;
+}
+
 interface OrderbookEntry {
     id: string;
     price: number;
@@ -58,6 +65,7 @@ interface uiFunctions {
     setOrders: (orders: OrderbookEntry[] | OrderbookData) => void;
     setError: (errorMessage: string) => void;
     setSuccess: (message: string) => void;
+    onCancelSuccess?: (orderId: string, ticker: string) => void;
 }
 
 
@@ -113,7 +121,7 @@ export class OrderBookConnection extends SocketConnection {
 
     }
 
-    public messageHandler(data: OrderUpdateResponse | OrderSnapshotResponse | ErrorResponse | OrderSuccessResponse) {
+    public messageHandler(data: OrderUpdateResponse | OrderSnapshotResponse | ErrorResponse | OrderSuccessResponse | OrderCancelSuccessResponse) {
         switch (data.type) {
             case "batch":
                 this.uiFunctions.setOrders(data.orders);
@@ -131,6 +139,12 @@ export class OrderBookConnection extends SocketConnection {
             case "order_success":
                 this.uiFunctions.setSuccess(data.message)
                 break;
+            case "order_cancel_success":
+                this.uiFunctions.setSuccess(data.message);
+                if (this.uiFunctions.onCancelSuccess) {
+                    this.uiFunctions.onCancelSuccess(data.order_id, data.ticker);
+                }
+                break;
             default:
                 // something
                 break;
@@ -146,6 +160,23 @@ export class OrderBookConnection extends SocketConnection {
             this.ws.send(JSON.stringify({ type: "order", order: order, token: token }));
         } catch (error) {
             console.error(error);
+        }
+    }
+
+    public async cancelOrder(orderId: string) {
+        try {
+            const token = await getFirebaseToken();
+            if (!token) {
+                console.error("No token found!");
+                return;
+            }
+            this.ws.send(JSON.stringify({
+                type: "cancel_order",
+                order_id: orderId,
+                token: token
+            }));
+        } catch (error) {
+            console.error("Failed to cancel order:", error);
         }
     }
 

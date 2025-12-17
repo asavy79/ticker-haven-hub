@@ -9,7 +9,8 @@ import {
     PositionsResult,
     AdminStats,
     MemberWithStats,
-    AdminFilters
+    AdminFilters,
+    CancelOrderResponse
 } from "@/types/admin";
 
 export class AdminService {
@@ -167,6 +168,12 @@ export class AdminService {
         const response = await axiosInstance.patch(`/api/v1/accounts/${accountId}/role`, {
             role
         });
+        return response.data;
+    }
+
+    // Cancel an order
+    static async cancelOrder(orderId: string): Promise<CancelOrderResponse> {
+        const response = await axiosInstance.post(`/api/v1/orders/${orderId}/cancel`);
         return response.data;
     }
 }
