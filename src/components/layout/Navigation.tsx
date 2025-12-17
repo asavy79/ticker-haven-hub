@@ -6,7 +6,6 @@ import {
   BookOpen, 
   Users, 
   BarChart3, 
-  Calendar,
   Settings,
   LogOut 
 } from "lucide-react";
@@ -21,7 +20,7 @@ const Navigation = () => {
   const mainNavItems = [
     { name: "Portfolio", href: "/portfolio", icon: TrendingUp },
     { name: "Orderbook", href: "/orderbook", icon: BarChart3 },
-    { name: "Meetings", href: "/meetings", icon: Calendar },
+    { name: "Welcome", href: "/welcome", icon: BookOpen },
   ];
 
   const adminNavItems = [

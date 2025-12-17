@@ -36,6 +36,7 @@ export interface AccountDTO {
     balance: number;
     role: AccountRole;
     last_login_at: string | null;
+    available_cash: number;
 }
 
 export interface OrderDTO {

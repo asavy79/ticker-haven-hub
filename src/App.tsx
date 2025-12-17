@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import Portfolio from "./pages/Portfolio";
 import Orderbook from "./pages/Orderbook";
-import Meetings from "./pages/Meetings";
+import Welcome from "./pages/Welcome";
 import Auth from "./pages/auth/Auth";
 import QRCode from "./pages/QRCode";
 import Admin from "./pages/admin/Admin";
@@ -58,10 +58,10 @@ const App = () => (
                 }
               />
               <Route
-                path="/meetings"
+                path="/welcome"
                 element={
                   <Layout>
-                    <Meetings />
+                    <Welcome />
                   </Layout>
                 }
               />

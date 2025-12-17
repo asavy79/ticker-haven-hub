@@ -290,7 +290,7 @@ const Portfolio = () => {
       </div>
 
       {/* Account Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -300,9 +300,24 @@ const Portfolio = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {(member.balance || 0).toFixed(2)}
+              ${(member.balance || 0).toFixed(2)}
             </div>
-            <p className="text-xs text-muted-foreground">Available credits</p>
+            <p className="text-xs text-muted-foreground">Total credits</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Available Cash
+            </CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${(member.available_cash || 0).toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground">Ready to trade</p>
           </CardContent>
         </Card>
 
