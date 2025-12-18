@@ -35,7 +35,7 @@ const SignIn = ({ onToggleMode }: SignInProps) => {
         title: "Welcome back!",
         description: "Successfully signed in to your account.",
       });
-      navigate("/portfolio");
+      navigate("/welcome");
     } else {
       toast({
         title: "Sign In Failed",
@@ -55,7 +55,7 @@ const SignIn = ({ onToggleMode }: SignInProps) => {
         title: "Welcome!",
         description: "Successfully signed in with Google.",
       });
-      navigate("/portfolio");
+      navigate("/welcome");
     } else {
       toast({
         title: "Google Sign-In Failed",
@@ -75,7 +75,7 @@ const SignIn = ({ onToggleMode }: SignInProps) => {
         title: "Welcome!",
         description: "Successfully signed in with Google.",
       });
-      navigate("/portfolio");
+      navigate("/welcome");
     } else {
       toast({
         title: "Google Sign-In Failed",

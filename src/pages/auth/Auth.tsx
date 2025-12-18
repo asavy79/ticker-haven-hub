@@ -12,7 +12,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (!isLoading && user) {
-      navigate("/portfolio");
+      navigate("/welcome");
     }
   }, [isLoading, user, navigate]);
 

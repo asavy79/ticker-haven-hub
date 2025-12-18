@@ -83,7 +83,7 @@ export function FirebaseAuthProvider({ children }: FirebaseAuthProviderProps) {
           userRole.toUpperCase() == "ADMIN" || userRole == "OWNER";
 
         if (!isAdmin && window.location.pathname.includes("/admin")) {
-          navigate("/orderbook");
+          navigate("/welcome");
         }
       }
     );

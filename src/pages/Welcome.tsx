@@ -16,9 +16,7 @@ const Welcome = () => {
     <div className="space-y-8 max-w-4xl mx-auto">
       {/* Header */}
       <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold tracking-tight">
-          Welcome to CU Quants
-        </h1>
+        <h1 className="text-4xl font-bold tracking-tight">Welcome to QuantX</h1>
         <p className="text-lg text-muted-foreground">
           Your guide to trading on our platform
         </p>
@@ -45,20 +43,25 @@ const Welcome = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-muted-foreground">
-                Execute at a <span className="text-foreground font-medium">specific price or better</span>. 
-                Your order sits in the book until matched or cancelled.
+                Execute at a{" "}
+                <span className="text-foreground font-medium">
+                  specific price or better
+                </span>
+                . Your order sits in the book until matched or cancelled.
               </p>
               <div className="bg-muted/50 rounded-lg p-3 space-y-2 text-sm">
                 <div className="flex items-start space-x-2">
                   <TrendingUp className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
                   <span>
-                    <span className="font-medium">Buy Limit:</span> Executes at your price or lower
+                    <span className="font-medium">Buy Limit:</span> Executes at
+                    your price or lower
                   </span>
                 </div>
                 <div className="flex items-start space-x-2">
                   <TrendingDown className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
                   <span>
-                    <span className="font-medium">Sell Limit:</span> Executes at your price or higher
+                    <span className="font-medium">Sell Limit:</span> Executes at
+                    your price or higher
                   </span>
                 </div>
               </div>
@@ -78,14 +81,15 @@ const Welcome = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-muted-foreground">
-                Execute <span className="text-foreground font-medium">immediately</span> at 
-                the best available price. Guarantees execution, not price.
+                Execute{" "}
+                <span className="text-foreground font-medium">immediately</span>{" "}
+                at the best available price. Guarantees execution, not price.
               </p>
               <div className="bg-muted/50 rounded-lg p-3 text-sm">
                 <div className="flex items-start space-x-2">
                   <Lightbulb className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
                   <span>
-                    Best for when you need to enter or exit a position quickly 
+                    Best for when you need to enter or exit a position quickly
                     and are willing to accept the current market price.
                   </span>
                 </div>
@@ -113,8 +117,11 @@ const Welcome = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-muted-foreground">
-                Buy orders require sufficient <span className="text-foreground font-medium">available cash</span>, 
-                not just account balance.
+                Buy orders require sufficient{" "}
+                <span className="text-foreground font-medium">
+                  available cash
+                </span>
+                , not just account balance.
               </p>
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
@@ -124,10 +131,19 @@ const Welcome = () => {
                       Why the difference?
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      When you place a buy order, funds are <span className="font-medium text-foreground">reserved</span> until 
-                      the order fills or is cancelled. Your <span className="font-medium text-foreground">balance</span> shows 
-                      total funds, while <span className="font-medium text-foreground">available cash</span> shows 
-                      what's actually free to use.
+                      When you place a buy order, funds are{" "}
+                      <span className="font-medium text-foreground">
+                        reserved
+                      </span>{" "}
+                      until the order fills or is cancelled. Your{" "}
+                      <span className="font-medium text-foreground">
+                        balance
+                      </span>{" "}
+                      shows total funds, while{" "}
+                      <span className="font-medium text-foreground">
+                        available cash
+                      </span>{" "}
+                      shows what's actually free to use.
                     </p>
                   </div>
                 </div>
@@ -145,8 +161,11 @@ const Welcome = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-muted-foreground">
-                Sell orders require <span className="text-foreground font-medium">available shares</span> for 
-                that ticker in your portfolio.
+                Sell orders require{" "}
+                <span className="text-foreground font-medium">
+                  available shares
+                </span>{" "}
+                for that ticker in your portfolio.
               </p>
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
@@ -156,8 +175,12 @@ const Welcome = () => {
                       How it works
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Similar to cash, when you place a sell order, shares are <span className="font-medium text-foreground">reserved</span>. 
-                      You cannot sell shares that are already committed to pending orders.
+                      Similar to cash, when you place a sell order, shares are{" "}
+                      <span className="font-medium text-foreground">
+                        reserved
+                      </span>
+                      . You cannot sell shares that are already committed to
+                      pending orders.
                     </p>
                   </div>
                 </div>
@@ -184,18 +207,46 @@ const Welcome = () => {
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
               Need to cancel a pending order? Head to your{" "}
-              <span className="text-foreground font-medium">Portfolio</span> page.
+              <span className="text-foreground font-medium">Portfolio</span>{" "}
+              page.
             </p>
             <div className="bg-muted/50 rounded-lg p-4 space-y-3">
               <p className="text-sm font-medium">How to cancel:</p>
               <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                <li>Navigate to the <span className="font-medium text-foreground">Portfolio</span> page</li>
-                <li>Scroll to the <span className="font-medium text-foreground">Recent Orders</span> section</li>
-                <li>Find orders with <Badge variant="outline" className="mx-1 text-xs">PENDING</Badge> or <Badge variant="outline" className="mx-1 text-xs">PARTIAL</Badge> status</li>
-                <li>Click the <span className="font-medium text-foreground text-red-500">Cancel</span> button</li>
+                <li>
+                  Navigate to the{" "}
+                  <span className="font-medium text-foreground">Portfolio</span>{" "}
+                  page
+                </li>
+                <li>
+                  Scroll to the{" "}
+                  <span className="font-medium text-foreground">
+                    Recent Orders
+                  </span>{" "}
+                  section
+                </li>
+                <li>
+                  Find orders with{" "}
+                  <Badge variant="outline" className="mx-1 text-xs">
+                    PENDING
+                  </Badge>{" "}
+                  or{" "}
+                  <Badge variant="outline" className="mx-1 text-xs">
+                    PARTIAL
+                  </Badge>{" "}
+                  status
+                </li>
+                <li>
+                  Click the{" "}
+                  <span className="font-medium text-foreground text-red-500">
+                    Cancel
+                  </span>{" "}
+                  button
+                </li>
               </ol>
               <p className="text-sm text-muted-foreground pt-2 border-t">
-                Cancelled orders release reserved cash or shares back to your available balance immediately.
+                Cancelled orders release reserved cash or shares back to your
+                available balance immediately.
               </p>
             </div>
           </CardContent>
