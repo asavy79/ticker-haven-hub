@@ -7,7 +7,8 @@ import {
   Users, 
   BarChart3, 
   Settings,
-  LogOut 
+  LogOut,
+  Key,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -18,9 +19,10 @@ const Navigation = () => {
   const { signOut, isLoading } = useAuth();
 
   const mainNavItems = [
+    { name: "Welcome", href: "/welcome", icon: BookOpen },
     { name: "Portfolio", href: "/portfolio", icon: TrendingUp },
     { name: "Orderbook", href: "/orderbook", icon: BarChart3 },
-    { name: "Welcome", href: "/welcome", icon: BookOpen },
+    { name: "API Keys", href: "/api-keys", icon: Key },
   ];
 
   const adminNavItems = [

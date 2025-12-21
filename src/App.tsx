@@ -16,6 +16,7 @@ import MemberDetail from "./pages/admin/MemberDetail";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./hooks/use-auth";
 import OrderMock from "./pages/OrderMock";
+import ApiKeys from "./pages/ApiKeys";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,14 @@ const App = () => (
                 element={
                   <Layout>
                     <MemberDetail />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/api-keys"
+                element={
+                  <Layout>
+                    <ApiKeys />
                   </Layout>
                 }
               />
