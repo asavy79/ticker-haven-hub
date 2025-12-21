@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   Key,
+  FileCode,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -23,6 +24,7 @@ const Navigation = () => {
     { name: "Portfolio", href: "/portfolio", icon: TrendingUp },
     { name: "Orderbook", href: "/orderbook", icon: BarChart3 },
     { name: "API Keys", href: "/api-keys", icon: Key },
+    { name: "API Docs", href: "/api-docs", icon: FileCode },
   ];
 
   const adminNavItems = [

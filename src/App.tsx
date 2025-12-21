@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./hooks/use-auth";
 import OrderMock from "./pages/OrderMock";
 import ApiKeys from "./pages/ApiKeys";
+import ApiDocs from "./pages/ApiDocs";
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,14 @@ const App = () => (
                 element={
                   <Layout>
                     <ApiKeys />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/api-docs"
+                element={
+                  <Layout>
+                    <ApiDocs />
                   </Layout>
                 }
               />
