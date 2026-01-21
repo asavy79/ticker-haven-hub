@@ -1,46 +1,55 @@
 import axios from "axios";
 import { auth } from "./firebase";
 
-const BASE_URL = "http://localhost:8000";
+const IS_DEV = import.meta.env.VITE_ENV === "development";
+
+let BASE_URL = "http://localhost:8000";
+
+if (!IS_DEV) {
+  console.log("Using production API URL");
+  BASE_URL = import.meta.env.VITE_API_URL;
+} else {
+  console.log("Using development API URL");
+}
 
 
 function getAuthBearer() {
-    const token = auth.currentUser?.getIdToken();
+  const token = auth.currentUser?.getIdToken();
 
-    if (!token) {
-        return {};
-    }
+  if (!token) {
+    return {};
+  }
 
-    return {
-        Authorization: `Bearer ${token}`
-    };
+  return {
+    Authorization: `Bearer ${token}`
+  };
 }
 
 
 const axiosInstance = axios.create({
-    baseURL: BASE_URL,
-    headers: {
-        "Content-Type": "application/json",
-    }
+  baseURL: BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  }
 });
 
 
 axiosInstance.interceptors.request.use(
-    async (config) => {
-      const user = auth.currentUser;
-  
-      if (user) {
-        const token = await user.getIdToken();
+  async (config) => {
+    const user = auth.currentUser;
 
-        config.headers = {
-          ...config.headers,
-          Authorization: `Bearer ${token}`,
-        };
-      }
-  
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+    if (user) {
+      const token = await user.getIdToken();
+
+      config.headers = {
+        ...config.headers,
+        Authorization: `Bearer ${token}`,
+      };
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export default axiosInstance;
