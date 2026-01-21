@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { WS_URL } from "@/lib/api";
 
 export interface OrderbookEntry {
   id: string;
@@ -41,7 +42,7 @@ export interface OrderbookData {
 }
 
 const connectionConfig = {
-  url: "ws://localhost:8000",
+  url: WS_URL,
   params: "",
 };
 

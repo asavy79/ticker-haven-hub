@@ -4,12 +4,17 @@ import { auth } from "./firebase";
 const IS_DEV = import.meta.env.VITE_ENV === "development";
 
 let BASE_URL = "http://localhost:8000";
+let WS_URL = "ws://localhost:8000";
 
 if (!IS_DEV) {
   BASE_URL = "https://quantx-api-production.up.railway.app";
+  WS_URL = "wss://quantx-api-production.up.railway.app";
 }
 
 console.log("BASE_URL", BASE_URL);
+console.log("WS_URL", WS_URL);
+
+export { WS_URL };
 
 
 function getAuthBearer() {

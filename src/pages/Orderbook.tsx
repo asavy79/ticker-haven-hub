@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import OrderBookConnection from "@/services/sockets/orderSubscription";
+import { WS_URL } from "@/lib/api";
 
 interface OrderbookEntry {
   price: number;
@@ -79,7 +80,7 @@ const Orderbook = () => {
   // Real-time websocket connection
   useEffect(() => {
     const config = {
-      url: "ws://localhost:8000", // Matches the API base URL
+      url: WS_URL,
       params: "",
     };
 
