@@ -6,7 +6,7 @@ const IS_DEV = import.meta.env.VITE_ENV === "development";
 let BASE_URL = "http://localhost:8000";
 
 if (!IS_DEV) {
-  BASE_URL = import.meta.env.QUANTX_API_ROUTE;
+  BASE_URL = "https://quantx-api-production.up.railway.app";
 }
 
 console.log("BASE_URL", BASE_URL);
