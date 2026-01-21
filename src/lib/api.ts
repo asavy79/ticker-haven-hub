@@ -7,7 +7,7 @@ let BASE_URL = "http://localhost:8000";
 
 if (!IS_DEV) {
   console.log("Using production API URL");
-  BASE_URL = import.meta.env.VITE_API_URL;
+  BASE_URL = import.meta.env.QUANTX_API_ROUTE;
 } else {
   console.log("Using development API URL");
 }
