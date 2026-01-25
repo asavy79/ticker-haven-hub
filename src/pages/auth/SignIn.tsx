@@ -91,88 +91,6 @@ const SignIn = ({ onToggleMode }: SignInProps) => {
         <CardTitle className="text-2xl text-center">Sign In</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="your.email@colorado.edu"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, email: e.target.value }))
-              }
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, password: e.target.value }))
-                }
-                required
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Signing in..." : "Sign In"}
-          </Button>
-
-          {error && (
-            <div className="text-sm text-destructive text-center">{error}</div>
-          )}
-
-          <div className="text-center">
-            <Button
-              type="button"
-              variant="link"
-              onClick={() => {
-                // You can implement forgot password functionality here
-                toast({
-                  title: "Password Reset",
-                  description:
-                    "Password reset functionality will be implemented soon.",
-                });
-              }}
-              className="text-sm"
-            >
-              Forgot your password?
-            </Button>
-          </div>
-        </form>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
-        </div>
-
         <Button
           type="button"
           variant="outline"
@@ -202,10 +120,7 @@ const SignIn = ({ onToggleMode }: SignInProps) => {
         </Button>
 
         <div className="text-center text-sm">
-          <span className="text-muted-foreground">Don't have an account? </span>
-          <Button variant="link" onClick={onToggleMode} className="p-0">
-            Sign up
-          </Button>
+          <span className="text-muted-foreground">Continue with your CU Account </span>
         </div>
       </CardContent>
     </Card>
