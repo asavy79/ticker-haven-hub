@@ -25,6 +25,8 @@ import {
 } from "@/types/admin";
 import { useFirebaseAuth } from "@/contexts/firebase-auth-context";
 
+const PAGE_SIZE = 10;
+
 const Portfolio = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +37,14 @@ const Portfolio = () => {
   const [trades, setTrades] = useState<TradeDTO[]>([]);
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [positions, setPositions] = useState<PositionDTO[]>([]);
+  
+  // Pagination state
+  const [ordersPage, setOrdersPage] = useState(0);
+  const [tradesPage, setTradesPage] = useState(0);
+  const [ordersTotalCount, setOrdersTotalCount] = useState(0);
+  const [tradesTotalCount, setTradesTotalCount] = useState(0);
+  const [loadingMoreOrders, setLoadingMoreOrders] = useState(false);
+  const [loadingMoreTrades, setLoadingMoreTrades] = useState(false);
   
   const { user, isLoading: authLoading } = useFirebaseAuth();
 
@@ -100,8 +110,8 @@ const Portfolio = () => {
       const [memberData, tradesData, ordersData, positionsData] =
         await Promise.all([
           AdminService.getAccount(accountId),
-          AdminService.getAccountTrades(accountId, { page_size: 50 }),
-          AdminService.getAccountOrders(accountId, { page_size: 50 }),
+          AdminService.getAccountTrades(accountId, { page: 0, page_size: PAGE_SIZE }),
+          AdminService.getAccountOrders(accountId, { page: 0, page_size: PAGE_SIZE }),
           AdminService.getAccountPositions(accountId, { page_size: 50 }),
         ]);
 
@@ -111,6 +121,10 @@ const Portfolio = () => {
       setTrades(tradesData.trades);
       setOrders(ordersData.orders);
       setPositions(positionsData.positions);
+      setOrdersTotalCount(ordersData.total_count);
+      setTradesTotalCount(tradesData.total_count);
+      setOrdersPage(0);
+      setTradesPage(0);
     } catch (err: any) {
       console.error("Error fetching portfolio data:", err);
       if (err.response?.status === 404) {
@@ -120,6 +134,46 @@ const Portfolio = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMoreOrders = async () => {
+    if (!user?.dbId || loadingMoreOrders) return;
+    
+    try {
+      setLoadingMoreOrders(true);
+      const nextPage = ordersPage + 1;
+      const ordersData = await AdminService.getAccountOrders(user.dbId, { 
+        page: nextPage, 
+        page_size: PAGE_SIZE 
+      });
+      
+      setOrders((prev) => [...prev, ...ordersData.orders]);
+      setOrdersPage(nextPage);
+    } catch (err) {
+      console.error("Error loading more orders:", err);
+    } finally {
+      setLoadingMoreOrders(false);
+    }
+  };
+
+  const loadMoreTrades = async () => {
+    if (!user?.dbId || loadingMoreTrades) return;
+    
+    try {
+      setLoadingMoreTrades(true);
+      const nextPage = tradesPage + 1;
+      const tradesData = await AdminService.getAccountTrades(user.dbId, { 
+        page: nextPage, 
+        page_size: PAGE_SIZE 
+      });
+      
+      setTrades((prev) => [...prev, ...tradesData.trades]);
+      setTradesPage(nextPage);
+    } catch (err) {
+      console.error("Error loading more trades:", err);
+    } finally {
+      setLoadingMoreTrades(false);
     }
   };
 
@@ -460,7 +514,7 @@ const Portfolio = () => {
       {/* Recent Trade History */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Trade History ({trades.length} total)</CardTitle>
+          <CardTitle>Trade History ({tradesTotalCount} total)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -471,44 +525,68 @@ const Portfolio = () => {
                 <p className="text-sm">Your trading history will appear here</p>
               </div>
             ) : (
-              trades.slice(0, 10).map((trade) => (
-                <div
-                  key={trade.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="flex items-center space-x-4">
-                    <Badge variant="default">Trade</Badge>
-                    <div>
-                      <div className="font-medium">{trade.symbol}</div>
+              trades.map((trade) => {
+                const isBuyer = trade.buy_account_id === user?.dbId;
+                return (
+                  <div
+                    key={trade.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <Badge
+                        variant={isBuyer ? "default" : "secondary"}
+                        className={isBuyer 
+                          ? "bg-green-600 hover:bg-green-700" 
+                          : "bg-red-600 hover:bg-red-700 text-white"
+                        }
+                      >
+                        {isBuyer ? "BUY" : "SELL"}
+                      </Badge>
+                      <div>
+                        <div className="font-medium">{trade.symbol}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(trade.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium">
+                        {trade.quantity} @ ${(trade.price || 0).toFixed(2)}
+                      </div>
                       <div className="text-sm text-muted-foreground">
-                        {new Date(trade.created_at).toLocaleDateString()}
+                        Value: ${(trade.trade_value || 0).toFixed(2)}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-medium">
-                      {trade.quantity} @ ${(trade.price || 0).toFixed(2)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Value: ${(trade.value || 0).toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
-            {trades.length > 10 && (
-              <div className="text-center text-sm text-muted-foreground">
-                Showing 10 of {trades.length} trades
+            {trades.length < tradesTotalCount && (
+              <div className="text-center pt-2">
+                <Button
+                  variant="outline"
+                  onClick={loadMoreTrades}
+                  disabled={loadingMoreTrades}
+                >
+                  {loadingMoreTrades ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    `Load More (${trades.length} of ${tradesTotalCount})`
+                  )}
+                </Button>
               </div>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Recent Orders */}
+      {/* Orders */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Orders ({orders.length} total)</CardTitle>
+          <CardTitle>Orders ({ordersTotalCount} total)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -519,7 +597,7 @@ const Portfolio = () => {
                 <p className="text-sm">Place your first order to get started</p>
               </div>
             ) : (
-              orders.slice(0, 10).map((order) => (
+              orders.map((order) => (
                 <div
                   key={order.id}
                   className="flex items-center justify-between p-4 border rounded-lg"
@@ -582,9 +660,22 @@ const Portfolio = () => {
                 </div>
               ))
             )}
-            {orders.length > 10 && (
-              <div className="text-center text-sm text-muted-foreground">
-                Showing 10 of {orders.length} orders
+            {orders.length < ordersTotalCount && (
+              <div className="text-center pt-2">
+                <Button
+                  variant="outline"
+                  onClick={loadMoreOrders}
+                  disabled={loadingMoreOrders}
+                >
+                  {loadingMoreOrders ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    `Load More (${orders.length} of ${ordersTotalCount})`
+                  )}
+                </Button>
               </div>
             )}
           </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { AdminService } from "@/services/admin";
+import { useFirebaseAuth } from "@/contexts/firebase-auth-context";
 import {
   DollarSign,
   ArrowUpCircle,
@@ -46,6 +47,9 @@ export const OrderForm = ({
   const [orderPrice, setOrderPrice] = useState("");
   const [orderQuantity, setOrderQuantity] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableCash, setAvailableCash] = useState<number | null>(null);
+  const [cashLoading, setCashLoading] = useState(false);
+  const [cashError, setCashError] = useState<string | null>(null);
   const [errors, setErrors] = useState<{
     price?: string;
     quantity?: string;
@@ -53,6 +57,7 @@ export const OrderForm = ({
   }>({});
 
   const { toast } = useToast();
+  const { user } = useFirebaseAuth();
 
   const validateForm = () => {
     const newErrors: typeof errors = {};
@@ -147,6 +152,39 @@ export const OrderForm = ({
     }
   };
 
+  useEffect(() => {
+    // Fetch fresh cash whenever the modal opens.
+    // This keeps the number accurate after fills/cancels without requiring a full page refresh.
+    const fetchAvailableCash = async () => {
+      if (!isOpen) return;
+
+      if (!user?.dbId) {
+        setAvailableCash(null);
+        setCashError("Sign in to view available cash");
+        return;
+      }
+
+      setCashLoading(true);
+      setCashError(null);
+      try {
+        const account = await AdminService.getAccount(user.dbId);
+        setAvailableCash(account.available_cash ?? 0);
+      } catch (err: any) {
+        console.error("Error fetching available cash:", err);
+        const msg =
+          err?.response?.data?.detail?.error_message ||
+          err?.response?.data?.detail ||
+          "Failed to load available cash";
+        setAvailableCash(null);
+        setCashError(msg);
+      } finally {
+        setCashLoading(false);
+      }
+    };
+
+    fetchAvailableCash();
+  }, [isOpen, user?.dbId]);
+
   const orderTotal = calculateTotal();
 
   return (
@@ -172,6 +210,29 @@ export const OrderForm = ({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Available Cash */}
+          <Card className="bg-muted/30">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  Available Cash
+                </span>
+                <span className="font-medium">
+                  {cashLoading
+                    ? "Loading..."
+                    : cashError
+                      ? "--"
+                      : `$${(availableCash ?? 0).toFixed(2)}`}
+                </span>
+              </div>
+              {cashError && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {cashError}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Buy/Sell Toggle */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Order Side</Label>
@@ -294,61 +355,18 @@ export const OrderForm = ({
             )}
           </div>
 
-          {/* Order Summary */}
+          {/* Order Summary - Compact Inline */}
           {(orderTotal > 0 || (priceType === "MARKET" && orderQuantity)) && (
-            <Card className="bg-muted/30">
-              <CardContent className="p-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Order Side:</span>
-                    <span
-                      className={`font-medium ${
-                        orderType === "Buy" ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {orderType}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Order Type:</span>
-                    <span className={`font-medium ${
-                      priceType === "MARKET" ? "text-blue-600" : "text-purple-600"
-                    }`}>
-                      {priceType === "MARKET" ? "Market Order" : "Limit Order"}
-                    </span>
-                  </div>
-                  {priceType === "LIMIT" && (
-                    <div className="flex justify-between text-sm">
-                      <span>Limit Price:</span>
-                      <span>{formatPrice(parseFloat(orderPrice))}</span>
-                    </div>
-                  )}
-                  {priceType === "MARKET" && (
-                    <div className="flex justify-between text-sm">
-                      <span>Execution:</span>
-                      <span className="text-blue-600 font-medium">At Market Price</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span>Quantity:</span>
-                    <span>{formatQuantity(parseInt(orderQuantity))}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between font-medium">
-                    <span>
-                      {priceType === "MARKET" ? "Estimated Value:" : "Total Value:"}
-                    </span>
-                    <span
-                      className={
-                        orderType === "Buy" ? "text-green-600" : "text-red-600"
-                      }
-                    >
-                      {priceType === "MARKET" ? "Market Price" : formatTotal(orderTotal)}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <div className={`text-sm font-medium py-2 px-3 rounded-md ${
+              orderType === "Buy" 
+                ? "bg-green-500/10 text-green-700 dark:text-green-400" 
+                : "bg-red-500/10 text-red-700 dark:text-red-400"
+            }`}>
+              {orderType.toUpperCase()} {priceType} {formatQuantity(parseInt(orderQuantity))} shares
+              {priceType === "LIMIT" && <> @ {formatPrice(parseFloat(orderPrice))}</>}
+              {priceType === "LIMIT" && <> = {formatTotal(orderTotal)}</>}
+              {priceType === "MARKET" && <> @ Market Price</>}
+            </div>
           )}
 
           {/* General Error */}

@@ -2,9 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -16,34 +13,7 @@ const SignIn = ({ onToggleMode }: SignInProps) => {
   const navigate = useNavigate();
   const { signInWithSSO, signInWithGoogle, isLoading, error, clearError } =
     useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    clearError();
-
-    const { email, password } = formData;
-
-    const result = await signIn({ email, password });
-
-    if (result.success) {
-      toast({
-        title: "Welcome back!",
-        description: "Successfully signed in to your account.",
-      });
-      navigate("/welcome");
-    } else {
-      toast({
-        title: "Sign In Failed",
-        description: result.error.message,
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleGoogleSignIn = async () => {
     clearError();

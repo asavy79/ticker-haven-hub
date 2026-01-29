@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { OrderForm } from "@/components/OrderForm";
+import ActiveOrdersCard, { ActiveOrdersCardHandle } from "@/components/ActiveOrdersCard";
 import {
   TrendingUp,
   Activity,
@@ -183,6 +184,7 @@ const OrderMock = () => {
   handlersRef.current = { addOrder, setOrders };
 
   const subRef = useRef<OrderBookConnection>();
+  const activeOrdersRef = useRef<ActiveOrdersCardHandle>(null);
 
   useEffect(() => {
     setConnectionStatus("connecting");
@@ -209,6 +211,12 @@ const OrderMock = () => {
             description: "",
             duration: 5000,
           });
+          // Refresh active orders on successful order placement
+          activeOrdersRef.current?.refresh();
+        },
+        onCancelSuccess: (orderId) => {
+          // Remove the cancelled order from active orders
+          activeOrdersRef.current?.removeOrder(orderId);
         },
       },
       selectedTicker
@@ -654,6 +662,13 @@ const OrderMock = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* My Active Orders */}
+      <ActiveOrdersCard
+        ref={activeOrdersRef}
+        ticker={selectedTicker}
+        websocketRef={subRef}
+      />
 
       {/* Footer Info */}
       <Card>

@@ -65,6 +65,7 @@ export class AdminService {
         if (filters?.before) params.append('before', filters.before);
         if (filters?.page) params.append('page', filters.page.toString());
         if (filters?.page_size) params.append('page_size', filters.page_size.toString());
+        if (filters?.status) params.append('status', filters.status);
 
         const response = await axiosInstance.get(`/api/v1/accounts/${accountId}/orders?${params.toString()}`);
         return response.data;
@@ -155,10 +156,11 @@ export class AdminService {
         }
     }
 
-    // Update account balance (admin only)
-    static async updateAccountBalance(accountId: number, balance: number): Promise<AccountDTO> {
-        const response = await axiosInstance.put(`/api/v1/accounts/${accountId}/balance`, {
-            balance
+    // Adjust account balance (admin only)
+    // Positive amount adds credits, negative amount removes credits
+    static async adjustAccountBalance(accountId: number, amount: number): Promise<AccountDTO> {
+        const response = await axiosInstance.patch(`/api/v1/accounts/${accountId}/balance`, {
+            amount
         });
         return response.data;
     }

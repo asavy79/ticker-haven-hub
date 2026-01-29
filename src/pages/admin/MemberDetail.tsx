@@ -46,9 +46,9 @@ import { useAuth } from "@/hooks/use-auth";
 const MemberDetail = () => {
   const { accountId } = useParams<{ accountId: string }>();
   const navigate = useNavigate();
-  const [isEditBalanceOpen, setIsEditBalanceOpen] = useState(false);
+  const [isAdjustBalanceOpen, setIsAdjustBalanceOpen] = useState(false);
   const [isEditRoleOpen, setIsEditRoleOpen] = useState(false);
-  const [newBalance, setNewBalance] = useState("");
+  const [adjustAmount, setAdjustAmount] = useState("");
   const [newRole, setNewRole] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,40 +113,43 @@ const MemberDetail = () => {
     }
   }, [accountId, user]);
 
-  const handleEditBalance = async () => {
-    if (!newBalance || !member || !accountId) return;
+  const handleAdjustBalance = async () => {
+    if (!adjustAmount || !member || !accountId) return;
 
     try {
       setUpdating(true);
       const accountIdNum = parseInt(accountId);
-      const balanceNum = parseFloat(newBalance);
+      const amountNum = parseFloat(adjustAmount);
 
-      if (isNaN(balanceNum)) {
+      if (isNaN(amountNum)) {
         toast({
-          title: "Invalid Balance",
+          title: "Invalid Amount",
           description: "Please enter a valid number",
           variant: "destructive",
         });
         return;
       }
 
-      const updatedMember = await AdminService.updateAccountBalance(
+      const updatedMember = await AdminService.adjustAccountBalance(
         accountIdNum,
-        balanceNum
+        amountNum
       );
       setMember(updatedMember);
 
+      const action = amountNum >= 0 ? "added to" : "removed from";
+      const absAmount = Math.abs(amountNum);
+      
       toast({
-        title: "Balance Updated",
-        description: `${member.username}'s balance updated to ${balanceNum} credits`,
+        title: "Balance Adjusted",
+        description: `${absAmount.toFixed(2)} credits ${action} ${member.username}'s account`,
       });
-      setIsEditBalanceOpen(false);
-      setNewBalance("");
+      setIsAdjustBalanceOpen(false);
+      setAdjustAmount("");
     } catch (err) {
-      console.error("Error updating balance:", err);
+      console.error("Error adjusting balance:", err);
       toast({
-        title: "Update Failed",
-        description: "Failed to update balance. Please try again.",
+        title: "Adjustment Failed",
+        description: "Failed to adjust balance. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -449,40 +452,54 @@ const MemberDetail = () => {
 
             <div className="space-y-4">
               <Dialog
-                open={isEditBalanceOpen}
-                onOpenChange={setIsEditBalanceOpen}
+                open={isAdjustBalanceOpen}
+                onOpenChange={setIsAdjustBalanceOpen}
               >
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full">
                     <Edit className="h-4 w-4 mr-2" />
-                    Edit Balance
+                    Adjust Credits
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Edit Account Balance</DialogTitle>
+                    <DialogTitle>Adjust Account Credits</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
+                    <div className="text-sm text-muted-foreground">
+                      <p>Current Balance: <span className="font-medium">${(member.balance || 0).toFixed(2)}</span></p>
+                      <p>Available Cash: <span className="font-medium">${(member.available_cash || 0).toFixed(2)}</span></p>
+                    </div>
                     <div className="space-y-2">
-                      <Label htmlFor="balance">New Balance</Label>
+                      <Label htmlFor="amount">Amount to Add/Remove</Label>
                       <Input
-                        id="balance"
+                        id="amount"
                         type="number"
                         step="0.01"
-                        placeholder={`Current: ${(member.balance || 0).toFixed(
-                          2
-                        )}`}
-                        value={newBalance}
-                        onChange={(e) => setNewBalance(e.target.value)}
+                        placeholder="e.g., 100 or -50"
+                        value={adjustAmount}
+                        onChange={(e) => setAdjustAmount(e.target.value)}
                         disabled={updating}
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Use positive numbers to add credits, negative to remove
+                      </p>
                     </div>
+                    {adjustAmount && !isNaN(parseFloat(adjustAmount)) && (
+                      <div className={`text-sm font-medium ${parseFloat(adjustAmount) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {parseFloat(adjustAmount) >= 0 ? 'Adding' : 'Removing'} {Math.abs(parseFloat(adjustAmount)).toFixed(2)} credits
+                        <br />
+                        <span className="text-muted-foreground font-normal">
+                          New balance: ${((member.balance || 0) + parseFloat(adjustAmount)).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                     <Button
-                      onClick={handleEditBalance}
+                      onClick={handleAdjustBalance}
                       className="w-full"
-                      disabled={updating || !newBalance}
+                      disabled={updating || !adjustAmount}
                     >
-                      {updating ? "Updating..." : "Update Balance"}
+                      {updating ? "Adjusting..." : "Adjust Credits"}
                     </Button>
                   </div>
                 </DialogContent>

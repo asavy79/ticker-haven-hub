@@ -79,6 +79,7 @@ export interface PositionDTO {
 export interface PaginatedResult {
     page: number;
     page_size: number;
+    total_count: number;
 }
 
 export interface OrdersResult extends PaginatedResult {
@@ -115,6 +116,7 @@ export interface AdminFilters {
     symbol?: string;
     after?: string;
     before?: string;
+    status?: OrderStatus;
 }
 
 // Cancel order response
